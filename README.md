@@ -135,7 +135,7 @@ export const lifecycle: WitnessLifecycle<TaskPayload> = async (qc) => {
 };
 ```
 
-Witness is a companion package: [`@rivergen/witness`](https://github.com/mithunchandrakanth/rivergen-witness)
+Witness is a companion package: [`@rivergen/witness`](https://github.com/Mithun-Chandar/rivergen-witness)
 
 ---
 
