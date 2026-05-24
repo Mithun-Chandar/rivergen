@@ -1,55 +1,55 @@
-﻿{
-    "name":  "@rivergen/cli",
-    "version":  "0.1.3",
-    "description":  "Verifiable realtime architecture for collaborative applications. One River, 12 gates, Witness.",
-    "keywords":  [
-                     "realtime",
-                     "verifiable",
-                     "one-river",
-                     "websocket",
-                     "socket.io",
-                     "tanstack-query",
-                     "codegen",
-                     "scaffolding",
-                     "typescript",
-                     "collaborative",
-                     "optimistic-ui",
-                     "witness",
-                     "architecture-enforcement"
-                 ],
-    "license":  "Apache-2.0",
-    "repository":  {
-                       "type":  "git",
-                       "url":  "https://github.com/Mithun-Chandar/rivergen"
-                   },
-    "bin":  {
-                "rivergen":  "./bin/rivergen.js"
-            },
-    "type":  "module",
-    "dependencies":  {
-                         "tsx":  ">=4"
-                     },
-    "peerDependencies":  {
-                             "typescript":  ">=5",
-                             "zod":  ">=3"
-                         },
-    "engines":  {
-                    "node":  ">=18"
-                },
-    "files":  [
-                  "bin/",
-                  "cli.ts",
-                  "config.ts",
-                  "schema.ts",
-                  "naming.ts",
-                  "plan.ts",
-                  "execute.ts",
-                  "init.ts",
-                  "barrel.ts",
-                  "satellite.ts",
-                  "dep-enforcer.ts",
-                  "apply-record.ts",
-                  "templates/",
-                  "gates/"
-              ]
+{
+    "name": "@rivergen/cli",
+    "version": "0.1.4",
+    "description": "Verifiable realtime architecture for collaborative applications. One River, 12 gates, Witness.",
+    "keywords": [
+        "realtime",
+        "verifiable",
+        "one-river",
+        "websocket",
+        "socket.io",
+        "tanstack-query",
+        "codegen",
+        "scaffolding",
+        "typescript",
+        "collaborative",
+        "optimistic-ui",
+        "witness",
+        "architecture-enforcement"
+    ],
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Mithun-Chandar/rivergen"
+    },
+    "bin": {
+        "rivergen": "./bin/rivergen.js"
+    },
+    "type": "module",
+    "dependencies": {
+        "tsx": "^4.0.0"
+    },
+    "peerDependencies": {
+        "typescript": ">=5",
+        "zod": ">=3"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "files": [
+        "bin/",
+        "cli.ts",
+        "config.ts",
+        "schema.ts",
+        "naming.ts",
+        "plan.ts",
+        "execute.ts",
+        "init.ts",
+        "barrel.ts",
+        "satellite.ts",
+        "dep-enforcer.ts",
+        "apply-record.ts",
+        "templates/",
+        "gates/"
+    ]
 }
