@@ -63,8 +63,7 @@ export function useUpdate${E}() {
       const listKey = ${e}Keys.list(${roomCtxArg});
       await queryClient.cancelQueries({ queryKey: listKey });
       const prev = queryClient.getQueryData<${E}[]>(listKey);
-      // Optimistic patch
-      if (prev) {
+      if (Array.isArray(prev)) {
         queryClient.setQueryData<${E}[]>(
           listKey,
           prev.map((item) => (item.id === id ? { ...item, ...data } : item)),
@@ -99,8 +98,7 @@ export function useDelete${E}() {
       const listKey = ${e}Keys.list(${roomCtxArg});
       await queryClient.cancelQueries({ queryKey: listKey });
       const prev = queryClient.getQueryData<${E}[]>(listKey);
-      // Optimistic removal
-      if (prev) {
+      if (Array.isArray(prev)) {
         queryClient.setQueryData<${E}[]>(
           listKey,
           prev.filter((item) => item.id !== id),
@@ -119,6 +117,25 @@ export function useDelete${E}() {
 `
     : "";
 
+  // Room join hook — only generated when the spec has a room template with vars
+  const roomJoinHook = roomVars.length > 0
+    ? `
+// ── useJoin${E}Room ────────────────────────────────────────────────────────────
+// LAW: the server broadcasts ${d} events to a scoped socket.io room.
+// The client MUST join that room or it will never receive those events.
+// Call this hook on the page/component that owns the ${d} context.
+//
+// Pattern:
+//   const { socket, connected } = useWebSocket();
+//   useEffect(() => {
+//     if (connected && socket) socket.emit("join:${d}", ${roomVars[0] ?? "id"});
+//   }, [connected, socket, ${roomVars[0] ?? "id"}]);
+//
+// TODO: replace the useEffect above with the correct room variable from your route.
+// The room template for this domain is: ${n.roomTemplate}
+`
+    : "";
+
   return `import {
   useQuery,
   useMutation,
@@ -126,6 +143,7 @@ export function useDelete${E}() {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import { ${e}Keys } from "../lib/query-keys";
+${roomJoinHook}
 
 // TODO: import your real ${E} types once defined
 // import type { ${E}, ${E}Input } from "your-types-package";
@@ -171,7 +189,8 @@ export function useCreate${E}() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: ${E}Input) => {
-      // TODO: replace with real API call + include clientTempId
+      // LAW: onMutate stamps data.clientTempId before this runs — send data as-is
+      // TODO: replace with real API call
       const res = await fetch("/api/${d}", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -181,16 +200,19 @@ export function useCreate${E}() {
       return res.json() as Promise<${E}>;
     },
     onMutate: async (data) => {
-      const clientTempId = \`temp-${e}-\${Date.now()}-\${Math.random()}\`;
+      // LAW: stamp clientTempId onto data — mutationFn sends data as-is, so the
+      // server receives the same ID the ghost uses. Never generate it independently
+      // in mutationFn — that produces a divergent ID and the ghost never reconciles.
+      if (!data.clientTempId) data.clientTempId = \`temp-${e}-\${Date.now()}\`;
+      const clientTempId = data.clientTempId;
       ${roomScopeComment}
       const listKey = ${e}Keys.list(${roomCtxArg});
       await queryClient.cancelQueries({ queryKey: listKey });
       const prev = queryClient.getQueryData<${E}[]>(listKey);
-      // Optimistic insertion with ghost placeholder
+      // Array.isArray guard required — a plain object under a cold cache passes
+      // a bare if(prev) truthy check and causes [...prev, ghost] to throw TypeError
       const ghost: ${E} = { id: clientTempId, ...data, _isOptimistic: true } as ${E};
-      if (prev) {
-        queryClient.setQueryData<${E}[]>(listKey, [...prev, ghost]);
-      }
+      queryClient.setQueryData<${E}[]>(listKey, [...(Array.isArray(prev) ? prev : []), ghost]);
       return { prev, listKey, clientTempId };
     },
     onError: (_err, _vars, context) => {
