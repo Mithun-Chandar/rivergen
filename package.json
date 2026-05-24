@@ -1,6 +1,6 @@
 {
     "name": "@rivergen/cli",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "description": "Verifiable realtime architecture for collaborative applications. One River, 12 gates, Witness.",
     "keywords": [
         "realtime",

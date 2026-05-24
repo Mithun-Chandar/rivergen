@@ -38,10 +38,8 @@ const GATE_NAME = "Gate #2: Event → Listener → Broadcaster → socket.emit";
  *     broadcastXxx(io, "event")  →  /\(io,\s*["']([a-z][a-z0-9._-]+)["']/
  *
  * @templateRef templates/backend-listener.ts
- *   ⚠ MISMATCH: template generates eventBus.on(RealtimeEvent.Constant, …)
- *     but the correct runtime API is eventBus.subscribe(…).
- *     Generated stubs must be fixed manually before Gate #2 can pass.
- *     TODO: update backend-listener.ts to emit .subscribe() and remove this warning.
+ *   Template output: eventBus.subscribe("event.name", handler) ✓
+ *   Gate alignment:  string-literal subscribe pattern detected above ✓
  *
  * @templateRef templates/backend-broadcast.ts
  *   Template output: broadcast${E}Event(io, "event.name", …) → io.to(room).emit(…)

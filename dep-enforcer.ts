@@ -26,7 +26,10 @@ export const REQUIRED_PACKAGES = {
       "socket.io-client", // WebSocket client
       "@tanstack/react-query", // Server state + cache layer
     ],
-    devDependencies: ["typescript"],
+    devDependencies: [
+      "typescript",
+      "@rivergen/witness", // DomainWitness / WitnessAssertion types used in generated *.witness.ts files
+    ],
   },
 } as const;
 

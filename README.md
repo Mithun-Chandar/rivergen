@@ -119,33 +119,44 @@ Gates verify that the realtime pipeline is structurally wired. Witness verifies 
 
 ```ts
 // task.witness.ts — generated scaffold, you fill the assertions
-export const lifecycle: WitnessLifecycle<TaskPayload> = async (qc) => {
-  // optimistic ghost appears immediately
-  await applyTaskCreated(CREATE_PAYLOAD, qc);
-  assertListContains(
-    qc,
-    taskKeys.list(PROJECT_ID),
-    CREATE_PAYLOAD.clientTempId,
-  );
+import type { DomainWitness, WitnessAssertion } from "@rivergen/witness";
 
-  // confirmed entity arrives — ghost is removed, no duplicate
-  await applyTaskCreated(CONFIRMED_PAYLOAD, qc);
-  assertListContains(qc, taskKeys.list(PROJECT_ID), CONFIRMED_PAYLOAD.taskId);
-  assertListNotContains(
-    qc,
-    taskKeys.list(PROJECT_ID),
-    CREATE_PAYLOAD.clientTempId,
-  );
+export interface TaskPayload {
+  taskId: string;
+  title: string;
+  projectId: string;
+  clientTempId?: string;
+  // ... all fields the UI reads from useQuery data
+}
 
-  // update arrives — correct field reaches the cache
-  await applyTaskUpdated(UPDATE_PAYLOAD, qc);
-  assertFieldEquals(
-    qc,
-    taskKeys.list(PROJECT_ID),
-    CONFIRMED_PAYLOAD.taskId,
-    "title",
-    "Updated title",
-  );
+export const taskWitness: DomainWitness<TaskPayload> = {
+  domain: "task",
+  events: ["task.created", "task.updated", "task.deleted"],
+
+  requiredFields: {
+    "task.created": ["taskId", "title", "projectId"],
+    "task.updated": ["taskId", "title"],
+    "task.deleted": ["taskId"],
+  },
+
+  testPayloads: {
+    "task.created": { taskId: "task-001", title: "Fix bug", projectId: "proj-001",
+      clientTempId: "ghost-001", _meta: { resourceId: "task-001",
+        actor: { id: "user-01", type: "user" }, context: { realmId: "proj-001" },
+        correlationId: "corr-01", eventVersion: "1.0" } },
+    // ...
+  },
+
+  async lifecycle(queryClient): Promise<WitnessAssertion[]> {
+    const assertions: WitnessAssertion[] = [];
+    // seed cache, apply events, assert fields survived each hop
+    // apply${E}Created(testPayloads["task.created"], queryClient);
+    // const list = queryClient.getQueryData<Task[]>(taskKeys.list("proj-001")) ?? [];
+    // assertions.push({ name: "task.created lands in list", ok: list.some(t => t.id === "task-001") });
+    return assertions;
+  },
+
+  signals: {},
 };
 ```
 
@@ -164,6 +175,15 @@ npm install -g @rivergen/cli
 # Or without a global install
 npx @rivergen/cli init
 ```
+
+`@rivergen/witness` provides the `DomainWitness` and `WitnessAssertion` types used in every generated `*.witness.ts` file. Add it as a dev dependency in your web app:
+
+```bash
+pnpm add -D @rivergen/witness --filter ./apps/web
+# or: npm install -D @rivergen/witness (inside apps/web)
+```
+
+Running `rivergen gen --install` will install it automatically alongside the other required packages.
 
 ### 1. Initialize
 
@@ -278,17 +298,42 @@ Create `rivergen.config.json` at your project root to override path defaults:
 {
   "dbImport": "{ prisma } from \"../lib/db\"",
   "sharedPackage": "@myapp/shared",
-  "api": { "srcRoot": "apps/api/src" },
-  "web": { "srcRoot": "apps/web/src" }
+  "auditDir": "witness",
+  "api": {
+    "srcRoot": "apps/api/src",
+    "packageJsonPath": "apps/api/package.json"
+  },
+  "web": {
+    "srcRoot": "apps/web/src",
+    "hooksDir": "apps/web/src/hooks",
+    "projectionsDir": "apps/web/src/lib/projections",
+    "witnessDir": "apps/web/src/witness",
+    "packageJsonPath": "apps/web/package.json"
+  }
 }
 ```
 
-| Field           | Default              | Description                                        |
-| --------------- | -------------------- | -------------------------------------------------- |
-| `dbImport`      | _(TODO comment)_     | DB client import injected into generated mutations |
-| `sharedPackage` | `"@rivergen/shared"` | Shared package — must export `ENTITY_PROJECTIONS`  |
-| `api.srcRoot`   | `"apps/api/src"`     | API source root                                    |
-| `web.srcRoot`   | `"apps/web/src"`     | Web source root                                    |
+All fields are optional — omit any to keep the default.
+
+| Field                          | Default                                            | Description                                                        |
+| ------------------------------ | -------------------------------------------------- | ------------------------------------------------------------------ |
+| `dbImport`                     | _(TODO comment)_                                   | DB client import injected into generated mutations                 |
+| `sharedPackage`                | `"@rivergen/shared"`                               | Shared package that exports `ENTITY_PROJECTIONS`                   |
+| `auditDir`                     | `"witness"`                                        | Directory for Phase 4/5/6 payload audit files and Gate #11         |
+| `api.srcRoot`                  | `"apps/api/src"`                                   | API source root — gate scans use this as the base                  |
+| `api.schemasDir`               | `"apps/api/src/lib/event-factory/schemas"`         | Slice directory for per-domain Zod schema files                    |
+| `api.listenersDir`             | `"apps/api/src/lib/event-bus-listeners"`           | EventBus listener files                                            |
+| `api.packageJsonPath`          | `"apps/api/package.json"`                          | Used by dep enforcer to check and install API packages             |
+| `web.srcRoot`                  | `"apps/web/src"`                                   | Web source root                                                    |
+| `web.hooksDir`                 | `"apps/web/src/hooks"`                             | TanStack Query hook files — scanned by Gate #9 and #10             |
+| `web.projectionsDir`           | `"apps/web/src/lib/projections"`                   | WS projection files — scanned by Gate #3 and #4                   |
+| `web.witnessDir`               | `"apps/web/src/witness"`                           | Witness files — scanned by Gate #12                                |
+| `web.dispatchersDir`           | `"apps/web/src/lib/cache/domain-dispatchers"`      | Per-domain dispatcher slices                                       |
+| `web.wsBindingsDir`            | `"apps/web/src/providers/ws-bindings"`             | Per-domain WebSocket event binding slices                          |
+| `web.queryKeysDir`             | `"apps/web/src/lib/query-keys"`                    | Per-domain TanStack Query key factories                            |
+| `web.packageJsonPath`          | `"apps/web/package.json"`                          | Used by dep enforcer to check and install web packages             |
+| `packages.entityProjectionsDir`| `"packages/shared/src/entity-projections"`         | Per-domain entity projection slices in the shared package          |
+| `applyRecordsDir`              | `"artifacts/gen-apply-records"`                    | Where apply records are written for reversibility                  |
 
 ---
 
