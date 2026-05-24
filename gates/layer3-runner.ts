@@ -28,10 +28,16 @@ const workerPath = path.join(
  * node --import tsx/esm, which can trigger ERR_REQUIRE_CYCLE_MODULE.
  */
 function resolveTsxBin(projectRoot: string): string {
-  // Try project root → workspace root → global tsx
-  // The generator lives at <sodium-root>/tools/generator-v2/gates/,
-  // so 3 levels up from this file always reaches the sodium-v2 workspace root.
-  const generatorWorkspaceRoot = path.resolve(
+  // Package root is one level above this file's gates/ directory.
+  // tsx is a declared dependency so it is always present in the package's
+  // own node_modules — whether installed locally or globally.
+  const packageRoot = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+  );
+
+  // Legacy: sodium-v2 monorepo had generator 3 levels deep.
+  const legacyWorkspaceRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     "..",
     "..",
@@ -39,12 +45,14 @@ function resolveTsxBin(projectRoot: string): string {
   );
 
   const candidates = [
-    // Generator's own workspace root (most reliable — tsx is always here)
-    path.join(generatorWorkspaceRoot, "node_modules", "tsx", "dist", "cli.mjs"),
+    // Package's own tsx — always correct for global and local installs
+    path.join(packageRoot, "node_modules", "tsx", "dist", "cli.mjs"),
     // Target project root (if target project has its own tsx)
     path.join(projectRoot, "node_modules", "tsx", "dist", "cli.mjs"),
     // One level above target project root (monorepo root)
     path.join(projectRoot, "..", "node_modules", "tsx", "dist", "cli.mjs"),
+    // Legacy sodium-v2 monorepo path
+    path.join(legacyWorkspaceRoot, "node_modules", "tsx", "dist", "cli.mjs"),
   ];
 
   for (const candidate of candidates) {

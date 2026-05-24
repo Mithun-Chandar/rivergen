@@ -1,6 +1,6 @@
-{
+﻿{
     "name":  "@rivergen/cli",
-    "version":  "0.1.2",
+    "version":  "0.1.3",
     "description":  "Verifiable realtime architecture for collaborative applications. One River, 12 gates, Witness.",
     "keywords":  [
                      "realtime",
@@ -23,18 +23,21 @@
                        "url":  "https://github.com/Mithun-Chandar/rivergen"
                    },
     "bin":  {
-                "rivergen":  "./cli.ts"
+                "rivergen":  "./bin/rivergen.js"
             },
     "type":  "module",
+    "dependencies":  {
+                         "tsx":  ">=4"
+                     },
     "peerDependencies":  {
-                             "tsx":  "\u003e=4",
-                             "typescript":  "\u003e=5",
-                             "zod":  "\u003e=3"
+                             "typescript":  ">=5",
+                             "zod":  ">=3"
                          },
     "engines":  {
-                    "node":  "\u003e=18"
+                    "node":  ">=18"
                 },
     "files":  [
+                  "bin/",
                   "cli.ts",
                   "config.ts",
                   "schema.ts",
