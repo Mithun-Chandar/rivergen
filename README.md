@@ -20,7 +20,7 @@ A field disappears. A ghost card never reconciles. A private entity leaks into t
 
 As realtime apps grow, they accumulate competing data paths. An `onSuccess` cache write here. A manual `invalidateQueries` there. A projection that handles most events but not all. Multiple contributors each solving their piece without knowing what the others touched.
 
-Eventually nobody knows which path is authoritative. The realtime layer becomes something only one engineer fully understands. New team members are warned: *"don't touch the WebSocket stuff."* Every fix risks introducing another silent failure. The architecture becomes haunted.
+Eventually nobody knows which path is authoritative. The realtime layer becomes something only one engineer fully understands. New team members are warned: _"don't touch the WebSocket stuff."_ Every fix risks introducing another silent failure. The architecture becomes haunted.
 
 This is not a beginner mistake. It happens to experienced teams. And it gets worse as the product grows.
 
@@ -94,20 +94,20 @@ After `rivergen gen`, the architecture exists. You fill in business logic. The g
 
 12 structural gates run on every `rivergen verify`. They turn architectural drift from a production surprise into a build error.
 
-| Gate | What it enforces |
-|------|-----------------|
-| **#1** Mutation → EventFactory | Mutations publish through EventFactory — no direct eventBus or socket calls |
-| **#2** Listener → broadcast chain | The full subscribe → broadcast → emit path is wired |
-| **#3** Dispatcher → projection | Every WS event routes through a dispatcher to a projection function |
-| **#4** Projection → entity-cache | Projections use entity-cache helpers — no raw `setQueryData` |
-| **#5** Schema coverage | Every emitted event has a registered Zod schema |
-| **#6** Schema `.strict()` | Every schema uses `.strict()` — prevents silent field stripping at publish time |
-| **#7** Room scoping | Private entities are scoped to rooms, not broadcast globally |
-| **#8** Provider isolation | `WebSocketProvider` does not import entity-cache |
-| **#9** No `onSuccess` writes | Cache convergence belongs to projections only |
-| **#10** Optimistic coverage | Every mutation has `onMutate` + `onError` |
-| **#11** Event Audit Coverage | Every event is covered in payload continuity audit artifacts (skipped if no artifacts present) |
-| **#12** Witness coverage | Every broadcast event has a complete witness entry |
+| Gate                              | What it enforces                                                                               |
+| --------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **#1** Mutation → EventFactory    | Mutations publish through EventFactory — no direct eventBus or socket calls                    |
+| **#2** Listener → broadcast chain | The full subscribe → broadcast → emit path is wired                                            |
+| **#3** Dispatcher → projection    | Every WS event routes through a dispatcher to a projection function                            |
+| **#4** Projection → entity-cache  | Projections use entity-cache helpers — no raw `setQueryData`                                   |
+| **#5** Schema coverage            | Every emitted event has a registered Zod schema                                                |
+| **#6** Schema `.strict()`         | Every schema uses `.strict()` — prevents silent field stripping at publish time                |
+| **#7** Room scoping               | Private entities are scoped to rooms, not broadcast globally                                   |
+| **#8** Provider isolation         | `WebSocketProvider` does not import entity-cache                                               |
+| **#9** No `onSuccess` writes      | Cache convergence belongs to projections only                                                  |
+| **#10** Optimistic coverage       | Every mutation has `onMutate` + `onError`                                                      |
+| **#11** Event Audit Coverage      | Every event is covered in payload continuity audit artifacts (skipped if no artifacts present) |
+| **#12** Witness coverage          | Every broadcast event has a complete witness entry                                             |
 
 **Gate #12 is the progress signal** — after `rivergen gen` it passes immediately but Layer 3 (the projection proof) shows as a stub until you fill the `lifecycle()` function. All other gates pass immediately after generation.
 
@@ -122,16 +122,30 @@ Gates verify that the realtime pipeline is structurally wired. Witness verifies 
 export const lifecycle: WitnessLifecycle<TaskPayload> = async (qc) => {
   // optimistic ghost appears immediately
   await applyTaskCreated(CREATE_PAYLOAD, qc);
-  assertListContains(qc, taskKeys.list(PROJECT_ID), CREATE_PAYLOAD.clientTempId);
+  assertListContains(
+    qc,
+    taskKeys.list(PROJECT_ID),
+    CREATE_PAYLOAD.clientTempId,
+  );
 
   // confirmed entity arrives — ghost is removed, no duplicate
   await applyTaskCreated(CONFIRMED_PAYLOAD, qc);
   assertListContains(qc, taskKeys.list(PROJECT_ID), CONFIRMED_PAYLOAD.taskId);
-  assertListNotContains(qc, taskKeys.list(PROJECT_ID), CREATE_PAYLOAD.clientTempId);
+  assertListNotContains(
+    qc,
+    taskKeys.list(PROJECT_ID),
+    CREATE_PAYLOAD.clientTempId,
+  );
 
   // update arrives — correct field reaches the cache
   await applyTaskUpdated(UPDATE_PAYLOAD, qc);
-  assertFieldEquals(qc, taskKeys.list(PROJECT_ID), CONFIRMED_PAYLOAD.taskId, "title", "Updated title");
+  assertFieldEquals(
+    qc,
+    taskKeys.list(PROJECT_ID),
+    CONFIRMED_PAYLOAD.taskId,
+    "title",
+    "Updated title",
+  );
 };
 ```
 
@@ -196,20 +210,20 @@ rivergen verify
 
 `rivergen gen specs/task.json` writes 12 files from a single spec:
 
-| # | File | What it is |
-|---|------|------------|
-| 1 | `apps/api/src/task/task.router.ts` | Express router — HTTP endpoints |
-| 2 | `apps/api/src/task/task.mutations.ts` | Business logic + EventFactory.publish() calls |
-| 3 | `apps/api/src/task/task.broadcast.ts` | socket.io emit helper — one function per event |
-| 4 | `apps/api/src/lib/event-bus-listeners/task.listener.ts` | EventBus subscriber → calls broadcaster |
-| 5 | `apps/web/src/hooks/use-task.ts` | TanStack Query hooks with optimistic mutations |
-| 6 | `apps/web/src/lib/projections/task-projections.ts` | WS event → cache convergence via entity-cache |
-| 7 | `apps/api/src/lib/event-factory/schemas/task.ts` | Zod `.strict()` payload schema slice |
-| 8 | `apps/web/src/lib/cache/domain-dispatchers/task.ts` | Event string → projection function dispatcher |
-| 9 | `apps/web/src/providers/ws-bindings/task.ts` | WebSocket event binding slice |
-| 10 | `packages/shared/src/entity-projections/task.ts` | Entity projection entry (list + detail keys) |
-| 11 | `apps/web/src/lib/query-keys/task.ts` | TanStack Query key factory |
-| 12 | `apps/web/src/witness/task.witness.ts` | Witness field continuity scaffold |
+| #   | File                                                    | What it is                                     |
+| --- | ------------------------------------------------------- | ---------------------------------------------- |
+| 1   | `apps/api/src/task/task.router.ts`                      | Express router — HTTP endpoints                |
+| 2   | `apps/api/src/task/task.mutations.ts`                   | Business logic + EventFactory.publish() calls  |
+| 3   | `apps/api/src/task/task.broadcast.ts`                   | socket.io emit helper — one function per event |
+| 4   | `apps/api/src/lib/event-bus-listeners/task.listener.ts` | EventBus subscriber → calls broadcaster        |
+| 5   | `apps/web/src/hooks/use-task.ts`                        | TanStack Query hooks with optimistic mutations |
+| 6   | `apps/web/src/lib/projections/task-projections.ts`      | WS event → cache convergence via entity-cache  |
+| 7   | `apps/api/src/lib/event-factory/schemas/task.ts`        | Zod `.strict()` payload schema slice           |
+| 8   | `apps/web/src/lib/cache/domain-dispatchers/task.ts`     | Event string → projection function dispatcher  |
+| 9   | `apps/web/src/providers/ws-bindings/task.ts`            | WebSocket event binding slice                  |
+| 10  | `packages/shared/src/entity-projections/task.ts`        | Entity projection entry (list + detail keys)   |
+| 11  | `apps/web/src/lib/query-keys/task.ts`                   | TanStack Query key factory                     |
+| 12  | `apps/web/src/witness/task.witness.ts`                  | Witness field continuity scaffold              |
 
 Plus 5 barrel `_index.ts` files are regenerated automatically.
 
@@ -221,38 +235,38 @@ Plus 5 barrel `_index.ts` files are regenerated automatically.
 {
   "version": 2,
   "domain": {
-    "key": "invoice",           // kebab-case — used in filenames
-    "displayName": "Invoice"    // used in generated comments
+    "key": "invoice", // kebab-case — used in filenames
+    "displayName": "Invoice" // used in generated comments
   },
   "entity": {
-    "key": "invoice",           // camelCase — used in type and function names
-    "eventPrefix": "invoice"    // must match the prefix of every event below
+    "key": "invoice", // camelCase — used in type and function names
+    "eventPrefix": "invoice" // must match the prefix of every event below
   },
   "events": [
-    "invoice.created",          // dot notation only — colons rejected
+    "invoice.created", // dot notation only — colons rejected
     "invoice.updated",
     "invoice.sent",
     "invoice.voided"
   ],
   "room": {
-    "template": "workspace:${workspaceId}",  // socket.io room pattern
-    "visibilityField": "visibility"          // required for private entities — omit to broadcast publicly
+    "template": "workspace:${workspaceId}", // socket.io room pattern
+    "visibilityField": "visibility" // required for private entities — omit to broadcast publicly
   }
 }
 ```
 
 The spec is the single source of truth for a domain. Not a wiki page. Not a Notion doc. A machine-readable contract the gates enforce.
 
-| Field | Type | Rule |
-|-------|------|------|
-| `version` | `2` | Must be exactly `2` |
-| `domain.key` | `string` | kebab-case: `"task"`, `"work-order"` |
-| `domain.displayName` | `string` | Human-readable: `"Task"`, `"Work Order"` |
-| `entity.key` | `string` | camelCase: `"task"`, `"workOrder"` |
-| `entity.eventPrefix` | `string` | Must match the prefix of every event in `events[]` |
-| `events[]` | `string[]` | Dot notation only. Min 1 event. |
-| `room.template` | `string` | socket.io room: `"project:${projectId}"` |
-| `room.visibilityField` | `string?` | Required for private entities — omitting it broadcasts private data publicly |
+| Field                  | Type       | Rule                                                                         |
+| ---------------------- | ---------- | ---------------------------------------------------------------------------- |
+| `version`              | `2`        | Must be exactly `2`                                                          |
+| `domain.key`           | `string`   | kebab-case: `"task"`, `"work-order"`                                         |
+| `domain.displayName`   | `string`   | Human-readable: `"Task"`, `"Work Order"`                                     |
+| `entity.key`           | `string`   | camelCase: `"task"`, `"workOrder"`                                           |
+| `entity.eventPrefix`   | `string`   | Must match the prefix of every event in `events[]`                           |
+| `events[]`             | `string[]` | Dot notation only. Min 1 event.                                              |
+| `room.template`        | `string`   | socket.io room: `"project:${projectId}"`                                     |
+| `room.visibilityField` | `string?`  | Required for private entities — omitting it broadcasts private data publicly |
 
 ---
 
@@ -269,12 +283,12 @@ Create `rivergen.config.json` at your project root to override path defaults:
 }
 ```
 
-| Field | Default | Description |
-|-------|---------|-------------|
-| `dbImport` | *(TODO comment)* | DB client import injected into generated mutations |
-| `sharedPackage` | `"@rivergen/shared"` | Shared package — must export `ENTITY_PROJECTIONS` |
-| `api.srcRoot` | `"apps/api/src"` | API source root |
-| `web.srcRoot` | `"apps/web/src"` | Web source root |
+| Field           | Default              | Description                                        |
+| --------------- | -------------------- | -------------------------------------------------- |
+| `dbImport`      | _(TODO comment)_     | DB client import injected into generated mutations |
+| `sharedPackage` | `"@rivergen/shared"` | Shared package — must export `ENTITY_PROJECTIONS`  |
+| `api.srcRoot`   | `"apps/api/src"`     | API source root                                    |
+| `web.srcRoot`   | `"apps/web/src"`     | Web source root                                    |
 
 ---
 
@@ -282,15 +296,15 @@ Create `rivergen.config.json` at your project root to override path defaults:
 
 RiverGen generates code for this stack. Templates are stubs — bring your own DB, auth, and business logic.
 
-| Layer | Required |
-|-------|----------|
-| API runtime | Node.js ≥ 18 |
-| API framework | Express 5 |
-| WebSocket | socket.io 4 |
-| Schema validation | Zod ≥ 3 |
-| Web framework | React |
-| Server state | TanStack Query v5 |
-| Language | TypeScript ≥ 5 |
+| Layer             | Required          |
+| ----------------- | ----------------- |
+| API runtime       | Node.js ≥ 18      |
+| API framework     | Express 5         |
+| WebSocket         | socket.io 4       |
+| Schema validation | Zod ≥ 3           |
+| Web framework     | React             |
+| Server state      | TanStack Query v5 |
+| Language          | TypeScript ≥ 5    |
 
 Support for Hono, Fastify, and additional frontend frameworks is planned.
 
