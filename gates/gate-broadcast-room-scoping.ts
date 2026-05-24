@@ -1,6 +1,7 @@
 import path from "node:path";
 import { collectFiles, readSourceFile, allMatches, lineOf } from "./utils";
 import type { GateResult, GateViolation } from "./types";
+import type { GeneratorConfig } from "../config";
 
 const GATE_ID = "gate-broadcast-room";
 const GATE_NAME =
@@ -42,10 +43,10 @@ const GATE_NAME =
  *   ⚠ NOTE: room value in the stub is a TODO placeholder — this gate does NOT validate that
  *     the room string resolves to a non-empty value. Fill the room TODO before deploying.
  */
-export function runGateBroadcastRoomScoping(projectRoot: string): GateResult {
+export function runGateBroadcastRoomScoping(projectRoot: string, config: GeneratorConfig): GateResult {
   const violations: GateViolation[] = [];
 
-  const apiSrc = path.join(projectRoot, "apps/api/src");
+  const apiSrc = path.join(projectRoot, config.api.srcRoot);
   const broadcastFiles = collectFiles(
     apiSrc,
     (name) => name.endsWith(".broadcast.ts"),

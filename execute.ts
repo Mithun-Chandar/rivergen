@@ -70,7 +70,7 @@ export function execute(
   if (options.install && !plan.deps.ok) {
     console.log("\n  Installing missing packages...\n");
     try {
-      installMissing(projectRoot, plan.deps.missing);
+      installMissing(projectRoot, plan.deps.missing, config);
     } catch (err) {
       result.errors.push(
         `Dependency install failed: ${(err as Error).message}`,
@@ -187,7 +187,7 @@ export function execute(
   // 7. Register satellite files (event-entity-map, ws-event-cache-audit, phase5)
   // Only shown when files actually exist in the project and were updated.
   try {
-    const satelliteFiles = registerSatelliteFiles(projectRoot, plan.names);
+    const satelliteFiles = registerSatelliteFiles(projectRoot, plan.names, config);
     if (satelliteFiles.length > 0) {
       console.log("  Updating satellite files...\n");
       for (const sf of satelliteFiles) {

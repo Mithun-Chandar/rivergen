@@ -157,16 +157,23 @@ export function checkDependencies(
 export function installMissing(
   projectRoot: string,
   missing: MissingPackage[],
+  config: GeneratorConfig,
 ): void {
   if (missing.length === 0) {
     console.log("[gen-v2] All required dependencies are present.");
     return;
   }
 
+  // Derive workspace dirs from config package.json paths (not hardcoded apps/api, apps/web).
+  const workspaceDirs: Record<"api" | "web", string> = {
+    api: path.resolve(projectRoot, path.dirname(config.api.packageJsonPath)),
+    web: path.resolve(projectRoot, path.dirname(config.web.packageJsonPath)),
+  };
+
   // Group by workspace + depType
   const groups = new Map<
     string,
-    { workspace: string; flag: string; packages: string[] }
+    { workspace: "api" | "web"; flag: string; packages: string[] }
   >();
 
   for (const m of missing) {
@@ -179,10 +186,7 @@ export function installMissing(
   }
 
   for (const [, group] of groups) {
-    const workspaceDir = path.join(
-      projectRoot,
-      group.workspace === "api" ? "apps/api" : "apps/web",
-    );
+    const workspaceDir = workspaceDirs[group.workspace];
     const cmd = `pnpm add ${group.flag} ${group.packages.join(" ")}`.trim();
     console.log(`[gen-v2] Installing in ${group.workspace}: ${cmd}`);
     try {

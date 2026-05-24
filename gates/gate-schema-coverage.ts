@@ -7,6 +7,7 @@ import {
   loadRegisteredEventTypes,
 } from "./utils";
 import type { GateResult, GateViolation } from "./types";
+import type { GeneratorConfig } from "../config";
 
 const GATE_ID = "gate-schema-coverage";
 const GATE_NAME = "Gate: EventFactory Schema Coverage";
@@ -50,14 +51,14 @@ const GATE_NAME = "Gate: EventFactory Schema Coverage";
  *     broadcastXxxCreated → broadcast${E}Event(io, "event.name", …)) which use string literals.
  *     If the template stops generating per-event helpers, update both regex patterns above.
  */
-export function runGateSchemaCoverage(projectRoot: string): GateResult {
+export function runGateSchemaCoverage(projectRoot: string, config: GeneratorConfig): GateResult {
   const violations: GateViolation[] = [];
 
   // 1. Collect registered event types
-  const registeredEvents = new Set(loadRegisteredEventTypes(projectRoot));
+  const registeredEvents = new Set(loadRegisteredEventTypes(projectRoot, config));
 
   // 2. Collect all emitted event strings from broadcast files
-  const apiSrc = path.join(projectRoot, "apps/api/src");
+  const apiSrc = path.join(projectRoot, config.api.srcRoot);
   const broadcastFiles = collectFiles(
     apiSrc,
     (name) => name.endsWith(".broadcast.ts"),
@@ -118,7 +119,7 @@ export function runGateSchemaCoverage(projectRoot: string): GateResult {
       violations.push({
         file: loc.file,
         line: loc.line,
-        message: `"${eventName}": emitted via socket.emit but not registered in EventPayloadSchemas. Add a .strict() Zod schema in apps/api/src/lib/event-factory/schemas.ts.`,
+        message: `"${eventName}": emitted via socket.emit but not registered in EventPayloadSchemas. Add a .strict() Zod schema entry.`,
         severity: "error",
       });
     } else {
@@ -130,7 +131,7 @@ export function runGateSchemaCoverage(projectRoot: string): GateResult {
   for (const eventName of registeredEvents) {
     if (!emittedEvents.has(eventName)) {
       violations.push({
-        file: "apps/api/src/lib/event-factory/schemas.ts",
+        file: config.api.schemasFile,
         message: `"${eventName}": registered in EventPayloadSchemas but never emitted in any *.broadcast.ts file. Either add a broadcast helper or remove the schema entry.`,
         severity: "warning",
       });

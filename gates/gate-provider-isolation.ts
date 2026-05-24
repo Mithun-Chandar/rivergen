@@ -1,6 +1,6 @@
-import path from "node:path";
 import { readSourceFile, lineOf, allMatches } from "./utils";
 import type { GateResult, GateViolation } from "./types";
+import type { GeneratorConfig } from "../config";
 
 const GATE_ID = "gate-provider-isolation";
 const GATE_NAME = "Gate: WebSocketProvider Entity-Cache Isolation";
@@ -34,12 +34,10 @@ const GATE_NAME = "Gate: WebSocketProvider Entity-Cache Isolation";
  *   Template output: provider calls applyRealtimeEventToCache() — never imports entity-cache ✓
  *   Gate alignment:  import ban and direct-call ban enforced ✓
  */
-export function runGateProviderIsolation(projectRoot: string): GateResult {
+export function runGateProviderIsolation(projectRoot: string, config: GeneratorConfig): GateResult {
   const violations: GateViolation[] = [];
 
-  const relPath = path.join("apps/web/src/providers/WebSocketProvider.tsx");
-  const absPath = path.join(projectRoot, relPath);
-
+  const relPath = config.web.providerFile;
   const src = readSourceFile(relPath, projectRoot);
   if (!src) {
     // File doesn't exist yet (before gen:init) — not a violation

@@ -1,6 +1,7 @@
 import path from "node:path";
 import { collectFiles, readSourceFile, lineOf, allMatches } from "./utils";
 import type { GateResult, GateViolation } from "./types";
+import type { GeneratorConfig } from "../config";
 
 const GATE_ID = "gate-schema-strict";
 const GATE_NAME = "Gate: Schema .strict() Enforcement";
@@ -30,13 +31,10 @@ const GATE_NAME = "Gate: Schema .strict() Enforcement";
  *   Template output: z.object({ fieldId: stringId }).strict() ✓
  *   Gate alignment:  template always appends .strict() — any manual additions must too ✓
  */
-export function runGateSchemaStrict(projectRoot: string): GateResult {
+export function runGateSchemaStrict(projectRoot: string, config: GeneratorConfig): GateResult {
   const violations: GateViolation[] = [];
 
-  const schemasDir = path.join(
-    projectRoot,
-    "apps/api/src/lib/event-factory/schemas",
-  );
+  const schemasDir = path.join(projectRoot, config.api.schemasDir);
   const schemaFiles = collectFiles(
     schemasDir,
     (name) => name.endsWith(".ts") && name !== "_index.ts",

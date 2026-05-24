@@ -100,6 +100,16 @@ export interface GeneratorConfig {
    * Defaults to "@rivergen/shared" — matches what gen:init creates.
    */
   sharedPackage?: string;
+  /**
+   * Directory containing the three payload audit files:
+   *   phase4-payload-continuity-audit.ts
+   *   phase5-test-payloads.ts
+   *   phase6-retained-slice-audit.ts
+   * Defaults to "witness". Override in rivergen.config.json if your project
+   * stores the audit files in a different directory.
+   * If none of the three files exist at this path, the audit gate skips silently.
+   */
+  auditDir?: string;
 }
 
 // ─── Defaults (matches standard v2 monorepo layout) ────────────────────────────
@@ -184,6 +194,7 @@ export function loadConfig(projectRoot: string): GeneratorConfig {
     applyRecordsDir: raw.applyRecordsDir ?? DEFAULTS.applyRecordsDir,
     dbImport: raw.dbImport,
     sharedPackage: raw.sharedPackage,
+    auditDir: raw.auditDir ?? "witness",
   };
 }
 

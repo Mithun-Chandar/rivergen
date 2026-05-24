@@ -1,32 +1,38 @@
 import { readSourceFile, allMatches, discoverBroadcastEvents } from "./utils";
 import type { GateResult, GateViolation } from "./types";
+import type { GeneratorConfig } from "../config";
 
-const GATE_ID = "gate-dark-knight-coverage";
+const GATE_ID = "gate-audit-coverage";
 const GATE_NAME = "Gate: Event Audit Coverage";
-
-const PHASE4_PATH = "tools/dark-knight/phase4-payload-continuity-audit.ts";
-const PHASE5_PATH = "tools/dark-knight/phase5-test-payloads.ts";
-const PHASE6_PATH = "tools/dark-knight/phase6-retained-slice-audit.ts";
 
 /**
  * Every event discovered by the generator must also be covered
- * by the three manual Dark Knight artifacts:
+ * by the three manual audit artifacts in `config.auditDir`:
  *
- *   Phase 4  —  REQUIRED_FIELDS entry (payload continuity)
- *   Phase 5  —  test payload (trace coverage replay)
- *   Phase 6  —  slice assertion reference (retained slice audit)
+ *   phase4-payload-continuity-audit.ts  —  REQUIRED_FIELDS entry (payload continuity)
+ *   phase5-test-payloads.ts             —  test payload (trace coverage replay)
+ *   phase6-retained-slice-audit.ts      —  slice assertion reference (retained slice audit)
  *
  * Without coverage in all three, a domain can pass gen:verify 10/10
- * while Dark Knight silently ignores the event, causing regression.
+ * while the audit gate silently ignores the event, causing regression.
+ *
+ * This gate is skipped entirely when none of the three files exist at
+ * `config.auditDir` — which is the default for projects that have not
+ * yet set up the payload audit files.
  *
  * Discovery: re-uses the same broadcast-file emit scan that gates
  * #2 and schema-coverage use, producing the canonical event list.
  */
-export function runGateDarkKnightCoverage(projectRoot: string): GateResult {
+export function runGateAuditCoverage(projectRoot: string, config: GeneratorConfig): GateResult {
   const violations: GateViolation[] = [];
 
-  // Skip if no dark-knight audit artifacts are present.
-  // Expected for projects not yet using @rivergen/audit.
+  const auditDir = config.auditDir ?? "witness";
+  const PHASE4_PATH = `${auditDir}/phase4-payload-continuity-audit.ts`;
+  const PHASE5_PATH = `${auditDir}/phase5-test-payloads.ts`;
+  const PHASE6_PATH = `${auditDir}/phase6-retained-slice-audit.ts`;
+
+  // Skip if no audit artifacts are present.
+  // Expected for projects not yet using the payload audit files.
   const anyAuditFilePresent =
     readSourceFile(PHASE4_PATH, projectRoot) !== null ||
     readSourceFile(PHASE5_PATH, projectRoot) !== null ||
@@ -46,7 +52,7 @@ export function runGateDarkKnightCoverage(projectRoot: string): GateResult {
   }
 
   // ── 1. Discover all events from broadcast files ───────────────────────
-  const allEvents = discoverBroadcastEvents(projectRoot);
+  const allEvents = discoverBroadcastEvents(projectRoot, config);
 
   if (allEvents.length === 0) {
     return {
@@ -61,13 +67,13 @@ export function runGateDarkKnightCoverage(projectRoot: string): GateResult {
   }
 
   // ── 2. Scan Phase 4 REQUIRED_FIELDS keys ──────────────────────────────
-  const phase4Events = extractPhase4Events(projectRoot);
+  const phase4Events = extractPhase4Events(projectRoot, PHASE4_PATH);
 
   // ── 3. Scan Phase 5 test payload type strings ─────────────────────────
-  const phase5Events = extractPhase5Events(projectRoot);
+  const phase5Events = extractPhase5Events(projectRoot, PHASE5_PATH);
 
   // ── 4. Scan Phase 6 for event name references ─────────────────────────
-  const phase6Events = extractPhase6Events(projectRoot);
+  const phase6Events = extractPhase6Events(projectRoot, PHASE6_PATH);
 
   // ── 5. Cross-reference ────────────────────────────────────────────────
   for (const event of allEvents) {
@@ -109,8 +115,8 @@ export function runGateDarkKnightCoverage(projectRoot: string): GateResult {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function extractPhase4Events(projectRoot: string): Set<string> {
-  const src = readSourceFile(PHASE4_PATH, projectRoot);
+function extractPhase4Events(projectRoot: string, filePath: string): Set<string> {
+  const src = readSourceFile(filePath, projectRoot);
   if (!src) return new Set();
 
   // Match keys in REQUIRED_FIELDS: "event.name": [...]
@@ -124,8 +130,8 @@ function extractPhase4Events(projectRoot: string): Set<string> {
   return keys;
 }
 
-function extractPhase5Events(projectRoot: string): Set<string> {
-  const src = readSourceFile(PHASE5_PATH, projectRoot);
+function extractPhase5Events(projectRoot: string, filePath: string): Set<string> {
+  const src = readSourceFile(filePath, projectRoot);
   if (!src) return new Set();
 
   // Match publish("event.name", ...) calls
@@ -139,8 +145,8 @@ function extractPhase5Events(projectRoot: string): Set<string> {
   return types;
 }
 
-function extractPhase6Events(projectRoot: string): Set<string> {
-  const src = readSourceFile(PHASE6_PATH, projectRoot);
+function extractPhase6Events(projectRoot: string, filePath: string): Set<string> {
+  const src = readSourceFile(filePath, projectRoot);
   if (!src) return new Set();
 
   // Match all "event.name" string literals that are plausible event identifiers

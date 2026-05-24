@@ -46,21 +46,25 @@ interface Layer3BatchResult {
 }
 
 // ─── QueryClient resolution ────────────────────────────────────────────────────
-//
-// Always use MinimalQueryClient — never the real @tanstack/query-core QueryClient.
-//
-// The real QueryClient.setQueriesData({ type: "active" }, ...) only iterates
-// queries that have live React observers. In this subprocess there are none,
-// so any projection that calls setQueriesData({ type: "active" }) would be a
-// no-op, silently leaving caches stale and causing deletion assertions to fail.
-//
-// MinimalQueryClient treats every stored entry as active, which is the correct
-// behaviour for a headless field-continuity proof runner.
 
 type QueryClientCtor = new () => unknown;
+let _resolvedCtor: QueryClientCtor | null = null;
+let _resolutionDone = false;
 
-function resolveQueryClientCtor(): QueryClientCtor {
-  return MinimalQueryClient;
+async function resolveQueryClientCtor(): Promise<QueryClientCtor> {
+  if (_resolutionDone) return _resolvedCtor ?? MinimalQueryClient;
+  _resolutionDone = true;
+
+  try {
+    const mod = await import("@tanstack/query-core");
+    if (typeof mod.QueryClient === "function") {
+      _resolvedCtor = mod.QueryClient as QueryClientCtor;
+    }
+  } catch {
+    // Not available — use MinimalQueryClient, which satisfies empty stubs
+  }
+
+  return _resolvedCtor ?? MinimalQueryClient;
 }
 
 class MinimalQueryClient {
@@ -97,11 +101,7 @@ class MinimalQueryClient {
       const queryKey: unknown[] = JSON.parse(keyStr) as unknown[];
       let matches = true;
       if (filters.predicate) {
-        try {
-          matches = filters.predicate({ queryKey });
-        } catch {
-          matches = false;
-        }
+        try { matches = filters.predicate({ queryKey }); } catch { matches = false; }
       } else if (filters.queryKey) {
         const prefix = filters.queryKey;
         matches = prefix.every((v, i) => queryKey[i] === v);
@@ -124,11 +124,7 @@ class MinimalQueryClient {
       const queryKey: unknown[] = JSON.parse(keyStr) as unknown[];
       let matches = true;
       if (filters.predicate) {
-        try {
-          matches = filters.predicate({ queryKey });
-        } catch {
-          matches = false;
-        }
+        try { matches = filters.predicate({ queryKey }); } catch { matches = false; }
       } else if (filters.queryKey) {
         const prefix = filters.queryKey;
         matches = prefix.every((v, i) => queryKey[i] === v);
@@ -147,7 +143,9 @@ interface WitnessLike {
   signals: Record<string, (qc: unknown) => Promise<unknown[]>>;
 }
 
-function findWitnessExport(mod: Record<string, unknown>): WitnessLike | null {
+function findWitnessExport(
+  mod: Record<string, unknown>,
+): WitnessLike | null {
   for (const val of Object.values(mod)) {
     if (
       val !== null &&
@@ -175,6 +173,16 @@ async function processFile(
   try {
     mod = await import(fileUrl);
   } catch (err) {
+    const rawMsg = String(err).split("\n")[0];
+    const isReactImport =
+      rawMsg.includes("react") ||
+      rawMsg.includes("jsx") ||
+      rawMsg.includes("document") ||
+      rawMsg.includes("window") ||
+      rawMsg.includes("navigator");
+    const hint = isReactImport
+      ? " The projection file imports React or browser globals, which cannot run in Node.js. Keep the projection import lines commented out in the witness file and call the projection functions directly inside lifecycle() without importing them at the top level."
+      : " Ensure all imports in the witness file are Node.js-compatible. Projection files that import React must NOT be imported at the top of the witness file — call them via dynamic import() inside lifecycle() instead, or keep those import lines commented out.";
     return {
       witnessFile: relPath,
       importFailed: true,
@@ -182,7 +190,7 @@ async function processFile(
       violations: [
         {
           file: relPath,
-          message: `Layer 3: cannot import witness file — ${String(err).split("\n")[0]}. Ensure projection imports are Node.js-compatible (no window/document/React hooks at the module level).`,
+          message: `Layer 3: cannot import witness file — ${rawMsg}.${hint}`,
           severity: "warning",
         },
       ],
@@ -204,7 +212,7 @@ async function processFile(
     };
   }
 
-  const Ctor = resolveQueryClientCtor();
+  const Ctor = await resolveQueryClientCtor();
 
   type Assertion = { name: string; ok: boolean; detail?: string };
   const allAssertions: Assertion[] = [];

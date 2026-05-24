@@ -8,15 +8,23 @@ import {
   loadRealtimeEventMap,
   extractSwitchCases,
 } from "./utils";
+import type { GateResult, GateViolation } from "./types";
+import type { GeneratorConfig } from "../config";
 
 // Loaded once at gate run time
 let _realtimeEventMapCache: Record<string, string> | null = null;
+let _realtimeEventMapConfig: GeneratorConfig | null = null;
 function getCachedRealtimeEventMap(
   projectRoot: string,
+  config: GeneratorConfig,
 ): Record<string, string> {
-  return (_realtimeEventMapCache ??= loadRealtimeEventMap(projectRoot));
+  if (_realtimeEventMapCache && _realtimeEventMapConfig === config) {
+    return _realtimeEventMapCache;
+  }
+  _realtimeEventMapConfig = config;
+  _realtimeEventMapCache = loadRealtimeEventMap(projectRoot, config);
+  return _realtimeEventMapCache;
 }
-import type { GateResult, GateViolation } from "./types";
 
 const GATE_ID = "gate3";
 const GATE_NAME = "Gate #3: WS socket.on → Dispatcher → Projection call";
@@ -85,15 +93,15 @@ const SOCKET_LIFECYCLE_EVENTS = new Set([
   "pong",
 ]);
 
-export function runGate3(projectRoot: string): GateResult {
+export function runGate3(projectRoot: string, config: GeneratorConfig): GateResult {
   const violations: GateViolation[] = [];
 
   _realtimeEventMapCache = null; // reset cache per run
-  const realtimeEventMap = loadRealtimeEventMap(projectRoot);
+  const realtimeEventMap = loadRealtimeEventMap(projectRoot, config);
 
   // ── 1. Parse WebSocketProvider for bound events ────────────────────────────
 
-  const providerPath = "apps/web/src/providers/WebSocketProvider.tsx";
+  const providerPath = config.web.providerFile;
   const providerSrc = readSourceFile(providerPath, projectRoot);
 
   const boundEvents = new Set<string>(); // event strings bound via socket.on
@@ -111,7 +119,7 @@ export function runGate3(projectRoot: string): GateResult {
     // Also resolve from imports in state-cache.ts which re-exports them.
 
     // First collect WS_EVENT_* constant definitions from any imported file.
-    const wsConstMap = buildWsConstMap(projectRoot, providerSrc.content);
+    const wsConstMap = buildWsConstMap(projectRoot, config, providerSrc.content);
 
     // Handle: socket.on(CONST, ...) where CONST is a WS_EVENT_* variable
     for (const m of allMatches(
@@ -154,14 +162,11 @@ export function runGate3(projectRoot: string): GateResult {
     // If provider calls getAllWsBindings(), scan ws-bindings slice files for
     // the bound event names instead of parsing per-event socket.on() calls.
     if (providerSrc.content.includes("getAllWsBindings")) {
-      const wsBindingsDir = path.join(
-        projectRoot,
-        "apps/web/src/providers/ws-bindings",
-      );
+      const wsBindingsDir = path.join(projectRoot, config.web.wsBindingsDir);
       if (fs.existsSync(wsBindingsDir)) {
         for (const filename of fs.readdirSync(wsBindingsDir)) {
           if (!filename.endsWith(".ts") || filename.startsWith("_")) continue;
-          const slicePath = `apps/web/src/providers/ws-bindings/${filename}`;
+          const slicePath = `${config.web.wsBindingsDir}/${filename}`;
           const src = readSourceFile(slicePath, projectRoot);
           if (!src) continue;
           for (const m of allMatches(src.content, /"([a-z][a-z0-9._-]+)"/g)) {
@@ -176,7 +181,7 @@ export function runGate3(projectRoot: string): GateResult {
 
   // ── 2. Parse state-cache dispatcher for cases ──────────────────────────────
 
-  const dispatcherPath = "apps/web/src/lib/cache/state-cache.ts";
+  const dispatcherPath = config.web.stateCacheFile;
   const dispatcherSrc = readSourceFile(dispatcherPath, projectRoot);
 
   const dispatchedEvents = new Set<string>(); // event strings in switch cases
@@ -227,14 +232,11 @@ export function runGate3(projectRoot: string): GateResult {
     // If state-cache.ts uses domainDispatchers[event]?.() pattern, scan the
     // domain-dispatchers slice files for event key → apply*Projection mappings.
     if (dispatcherSrc.content.includes("domainDispatchers")) {
-      const dispatchersDir = path.join(
-        projectRoot,
-        "apps/web/src/lib/cache/domain-dispatchers",
-      );
+      const dispatchersDir = path.join(projectRoot, config.web.dispatchersDir);
       if (fs.existsSync(dispatchersDir)) {
         for (const filename of fs.readdirSync(dispatchersDir)) {
           if (!filename.endsWith(".ts") || filename.startsWith("_")) continue;
-          const slicePath = `apps/web/src/lib/cache/domain-dispatchers/${filename}`;
+          const slicePath = `${config.web.dispatchersDir}/${filename}`;
           const src = readSourceFile(slicePath, projectRoot);
           if (!src) continue;
 
@@ -259,7 +261,7 @@ export function runGate3(projectRoot: string): GateResult {
 
   // ── 3. Parse projection files for exported apply* functions ───────────────
 
-  const projectionsDir = path.join(projectRoot, "apps/web/src/lib/projections");
+  const projectionsDir = path.join(projectRoot, config.web.projectionsDir);
   const projectionFiles = collectFiles(
     projectionsDir,
     (name) =>
@@ -357,10 +359,11 @@ export function runGate3(projectRoot: string): GateResult {
  */
 function buildWsConstMap(
   projectRoot: string,
+  config: GeneratorConfig,
   providerContent: string,
 ): Record<string, string> {
   const result: Record<string, string> = {};
-  const realtimeEventMap = getCachedRealtimeEventMap(projectRoot);
+  const realtimeEventMap = getCachedRealtimeEventMap(projectRoot, config);
 
   // Extract import sources from the provider file
   // e.g. import { WS_EVENT_X, WS_EVENT_Y } from "../lib/cache"
@@ -375,9 +378,10 @@ function buildWsConstMap(
     if (wsConsts.length === 0) continue;
 
     // Scan candidate files that export WS_EVENT_* constants
+    const cacheDir = path.dirname(config.web.stateCacheFile);
     const candidatePaths = [
-      `apps/web/src/lib/cache/state-cache.ts`,
-      `apps/web/src/lib/cache/index.ts`,
+      config.web.stateCacheFile,
+      `${cacheDir}/index.ts`,
     ];
 
     for (const candidatePath of candidatePaths) {

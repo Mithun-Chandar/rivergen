@@ -15,13 +15,10 @@ import {
 } from "./witness-parse";
 import { runLayer3 } from "./layer3-runner";
 import type { GateResult, GateViolation } from "./types";
+import type { GeneratorConfig } from "../config";
 
 const GATE_ID = "gate-witness-coverage";
 const GATE_NAME = "Gate #12: Witness — Field Continuity Coverage";
-
-const WITNESS_DIR = "apps/web/src/witness";
-const SCHEMAS_DIR = "apps/api/src/lib/event-factory/schemas";
-const API_SRC = "apps/api/src";
 
 /**
  * Gate #12 — Witness field continuity audit.
@@ -47,8 +44,13 @@ const API_SRC = "apps/api/src";
  */
 export async function runGateWitnessCoverage(
   projectRoot: string,
+  config: GeneratorConfig,
 ): Promise<GateResult> {
   const violations: GateViolation[] = [];
+
+  const WITNESS_DIR = config.web.witnessDir;
+  const SCHEMAS_DIR = config.api.schemasDir;
+  const API_SRC = config.api.srcRoot;
 
   // Skip if no witness directory exists
   const absWitnessDir = path.join(projectRoot, WITNESS_DIR);
@@ -65,7 +67,7 @@ export async function runGateWitnessCoverage(
   }
 
   // ── Discover broadcast events (Layer 4 baseline) ───────────────────────────
-  const allBroadcastEvents = discoverBroadcastEvents(projectRoot);
+  const allBroadcastEvents = discoverBroadcastEvents(projectRoot, config);
 
   if (allBroadcastEvents.length === 0) {
     return {
@@ -91,6 +93,8 @@ export async function runGateWitnessCoverage(
     projectRoot,
     witnessFiles,
     violations,
+    SCHEMAS_DIR,
+    API_SRC,
   );
   violations.push(...layer1And2Violations);
 
@@ -185,6 +189,8 @@ function runLayers1And2(
   projectRoot: string,
   witnessFiles: string[],
   _existingViolations: GateViolation[],
+  schemasDir: string,
+  apiSrc: string,
 ): GateViolation[] {
   const violations: GateViolation[] = [];
 
@@ -199,7 +205,7 @@ function runLayers1And2(
     if (requiredFields.size === 0) continue; // no entries yet — scaffold only
 
     // ── Layer 1: requiredFields ⊆ Zod schema ─────────────────────────────
-    const schemaPath = `${SCHEMAS_DIR}/${domain}.ts`;
+    const schemaPath = `${schemasDir}/${domain}.ts`;
     const schemaSrc = readSourceFile(schemaPath, projectRoot);
 
     if (!schemaSrc) {
@@ -237,7 +243,7 @@ function runLayers1And2(
     }
 
     // ── Layer 2: requiredFields ⊆ broadcast emit payload ─────────────────
-    const broadcastPath = `${API_SRC}/${domain}/${domain}.broadcast.ts`;
+    const broadcastPath = `${apiSrc}/${domain}/${domain}.broadcast.ts`;
     const broadcastSrc = readSourceFile(broadcastPath, projectRoot);
 
     if (!broadcastSrc) {

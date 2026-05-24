@@ -210,10 +210,11 @@ export function buildPlan(
   ];
 
   // Satellite files: only shown if they already exist in this project.
+  const auditDir = config.auditDir ?? "witness";
   const SATELLITE_PATHS = [
     "packages/shared/src/event-entity-map.ts",
     "apps/web/src/providers/ws-event-cache-audit.ts",
-    "tools/dark-knight/phase5-trace-coverage-audit.ts",
+    `${auditDir}/phase5-trace-coverage-audit.ts`,
   ];
   const satelliteFiles = SATELLITE_PATHS.filter((p) =>
     fs.existsSync(path.join(projectRoot, p)),

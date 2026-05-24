@@ -9,6 +9,7 @@ import {
   loadRealtimeEventMap,
 } from "./utils";
 import type { GateResult, GateViolation } from "./types";
+import type { GeneratorConfig } from "../config";
 
 const GATE_ID = "gate2";
 const GATE_NAME = "Gate #2: Event → Listener → Broadcaster → socket.emit";
@@ -46,11 +47,11 @@ const GATE_NAME = "Gate #2: Event → Listener → Broadcaster → socket.emit";
  *   Template output: broadcast${E}Event(io, "event.name", …) → io.to(room).emit(…)
  *   Gate alignment:  .emit("event.name") and (io, "event.name") string literals ✓
  */
-export function runGate2(projectRoot: string): GateResult {
+export function runGate2(projectRoot: string, config: GeneratorConfig): GateResult {
   const violations: GateViolation[] = [];
 
   // 1. Collect registered event types
-  const registeredEvents = loadRegisteredEventTypes(projectRoot);
+  const registeredEvents = loadRegisteredEventTypes(projectRoot, config);
 
   if (registeredEvents.length === 0) {
     return {
@@ -66,10 +67,7 @@ export function runGate2(projectRoot: string): GateResult {
   }
 
   // 2. Collect subscribed event strings from all listener files
-  const listenersDir = path.join(
-    projectRoot,
-    "apps/api/src/lib/event-bus-listeners",
-  );
+  const listenersDir = path.join(projectRoot, config.api.listenersDir);
   const listenerFiles = collectFiles(
     listenersDir,
     (name) => name.endsWith(".listener.ts"),
@@ -80,7 +78,7 @@ export function runGate2(projectRoot: string): GateResult {
   const listenerFilesByEvent = new Map<string, string>(); // event → file
 
   // Load RealtimeEvent map for PascalCase resolution
-  const realtimeEventMap = loadRealtimeEventMap(projectRoot);
+  const realtimeEventMap = loadRealtimeEventMap(projectRoot, config);
 
   for (const relPath of listenerFiles) {
     const src = readSourceFile(relPath, projectRoot);
@@ -119,7 +117,7 @@ export function runGate2(projectRoot: string): GateResult {
   }
 
   // 3. Collect event strings emitted in broadcast files
-  const apiSrc = path.join(projectRoot, "apps/api/src");
+  const apiSrc = path.join(projectRoot, config.api.srcRoot);
   const broadcastFiles = collectFiles(
     apiSrc,
     (name) => name.endsWith(".broadcast.ts"),
@@ -162,13 +160,13 @@ export function runGate2(projectRoot: string): GateResult {
 
     if (!hasListener && !hasEmit) {
       violations.push({
-        file: "apps/api/src/lib/event-factory/schemas.ts",
+        file: config.api.schemasFile,
         message: `"${event}": registered in EventPayloadSchemas but has no listener (eventBus.subscribe) and no broadcast emit. The full pipeline is broken.`,
         severity: "error",
       });
     } else if (!hasListener) {
       violations.push({
-        file: "apps/api/src/lib/event-bus-listeners/",
+        file: config.api.listenersDir + "/",
         message: `"${event}": no listener found. Add eventBus.subscribe(WorkspaceEvent.${event
           .toUpperCase()
           .replace(/\./g, "_")}) in a *.listener.ts file.`,

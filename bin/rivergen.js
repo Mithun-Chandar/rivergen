@@ -39,9 +39,9 @@ const tsx = findTsx(pkgRoot);
 if (!tsx) {
   process.stderr.write(
     "[rivergen] Cannot find tsx. It should be installed automatically as a " +
-    "dependency of @rivergen/cli. Try:\n" +
-    "  npm install @rivergen/cli@latest\n" +
-    "If the problem persists, install tsx globally: npm install -g tsx\n"
+      "dependency of @rivergen/cli. Try:\n" +
+      "  npm install @rivergen/cli@latest\n" +
+      "If the problem persists, install tsx globally: npm install -g tsx\n",
   );
   process.exit(1);
 }
@@ -55,7 +55,9 @@ const result = spawnSync(
 );
 
 if (result.error) {
-  process.stderr.write("[rivergen] Failed to start: " + result.error.message + "\n");
+  process.stderr.write(
+    "[rivergen] Failed to start: " + result.error.message + "\n",
+  );
   process.exit(1);
 }
 

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { GeneratorConfig } from "../config";
 
 // ─── File discovery ────────────────────────────────────────────────────────────
 
@@ -111,15 +112,15 @@ export function resolveWorkspaceEvent(constant: string): string {
 // ─── Broadcast event discovery ────────────────────────────────────────────────
 
 /**
- * Discovers all event names emitted by broadcast files under apps/api/src.
- * Shared by gate-dark-knight-coverage and gate-witness-coverage.
+ * Discovers all event names emitted by broadcast files under the API src root.
+ * Shared by the audit gate and gate-witness-coverage.
  *
  * Two patterns detected:
  *   io.to(...).emit("event.name", ...)   — direct socket emit
  *   broadcastX(io, "event.name", ...)    — broadcast helper call
  */
-export function discoverBroadcastEvents(projectRoot: string): string[] {
-  const apiSrc = path.join(projectRoot, "apps/api/src");
+export function discoverBroadcastEvents(projectRoot: string, config: GeneratorConfig): string[] {
+  const apiSrc = path.join(projectRoot, config.api.srcRoot);
   const events = new Set<string>();
 
   const broadcastFiles = collectFiles(
@@ -189,13 +190,14 @@ export function extractSwitchCases(
 // ─── RealtimeEvent value map extractor ────────────────────────────────────────
 
 /**
- * Reads packages/types/src/realtime-events.ts and builds a map of
+ * Reads the realtime-events file and builds a map of
  * { PascalName: "event.string" } from the RealtimeEvent const object.
  */
 export function loadRealtimeEventMap(
   projectRoot: string,
+  config: GeneratorConfig,
 ): Record<string, string> {
-  const filePath = "packages/types/src/realtime-events.ts";
+  const filePath = config.packages.typesEventsFile;
   const src = readSourceFile(filePath, projectRoot);
   if (!src) return {};
 
@@ -212,17 +214,15 @@ export function loadRealtimeEventMap(
 // ─── EventPayloadSchemas key extractor ────────────────────────────────────────
 
 /**
- * Reads apps/api/src/lib/event-factory/schemas.ts and returns the list of
- * registered event type strings from EventPayloadSchemas.
+ * Reads the EventFactory schema files and returns all registered event type strings.
+ * Checks both the legacy monolithic schemas.ts and the slice pattern schemas/<domain>.ts.
  */
-export function loadRegisteredEventTypes(projectRoot: string): string[] {
+export function loadRegisteredEventTypes(projectRoot: string, config: GeneratorConfig): string[] {
   const results = new Set<string>();
 
   // ── Legacy path: monolithic schemas.ts ────────────────────────────────────
-  const legacyPath = "apps/api/src/lib/event-factory/schemas.ts";
-  const legacySrc = readSourceFile(legacyPath, projectRoot);
+  const legacySrc = readSourceFile(config.api.schemasFile, projectRoot);
   if (legacySrc) {
-    // Matches: "event.name": z.  OR  "event.name": z\n    .  (multi-line format)
     for (const m of allMatches(
       legacySrc.content,
       /"([a-z][a-z0-9._-]+)"\s*:\s*z\s*\./g,
@@ -232,10 +232,7 @@ export function loadRegisteredEventTypes(projectRoot: string): string[] {
   }
 
   // ── Slice pattern: schemas/<domain>.ts files ───────────────────────────────
-  const schemasDir = path.join(
-    projectRoot,
-    "apps/api/src/lib/event-factory/schemas",
-  );
+  const schemasDir = path.join(projectRoot, config.api.schemasDir);
   if (fs.existsSync(schemasDir)) {
     for (const filename of fs.readdirSync(schemasDir)) {
       if (
@@ -244,7 +241,7 @@ export function loadRegisteredEventTypes(projectRoot: string): string[] {
       ) {
         continue;
       }
-      const slicePath = `apps/api/src/lib/event-factory/schemas/${filename}`;
+      const slicePath = `${config.api.schemasDir}/${filename}`;
       const src = readSourceFile(slicePath, projectRoot);
       if (!src) continue;
       for (const m of allMatches(

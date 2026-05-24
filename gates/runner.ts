@@ -8,14 +8,15 @@ import { runGateSchemaStrict } from "./gate-schema-strict";
 import { runGateProviderIsolation } from "./gate-provider-isolation";
 import { runGateOnSuccessBan } from "./gate-onsuccess-ban";
 import { runGateOptimisticCoverage } from "./gate-optimistic-coverage";
-import { runGateDarkKnightCoverage } from "./gate-dark-knight-coverage";
+import { runGateAuditCoverage } from "./gate-audit-coverage";
 import { runGateWitnessCoverage } from "./gate-witness-coverage";
 import type { GateResult, RunnerReport } from "./types";
+import { loadConfig } from "../config";
 
 // ─── Runner ────────────────────────────────────────────────────────────────────
 
 /**
- * Runs all eleven gates against the project at `projectRoot`.
+ * Runs all twelve gates against the project at `projectRoot`.
  * Returns a RunnerReport with results from every gate.
  *
  * Exit: allPassed is true only when every gate has no error-severity violations.
@@ -32,25 +33,27 @@ import type { GateResult, RunnerReport } from "./types";
  *   Gate     — Provider isolation (no entity-cache in WebSocketProvider)
  *   Gate     — No cache writes in onSuccess (WS projection owns convergence)
  *   Gate     — Optimistic coverage (every useMutation has onMutate + onError)
- *   Gate     — Dark Knight coverage (every event in Phase 4/5/6)
+ *   Gate     — Audit coverage (every event in Phase 4/5/6)
  *   Gate #12 — Witness coverage (every broadcast event has a witness file entry)
  */
 export async function runAllGates(
   projectRoot: string,
 ): Promise<RunnerReport> {
+  const config = loadConfig(projectRoot);
+
   const results: GateResult[] = [
-    runGate1(projectRoot),
-    runGate2(projectRoot),
-    runGate3(projectRoot),
-    runGate4(projectRoot),
-    runGateBroadcastRoomScoping(projectRoot),
-    runGateSchemaCoverage(projectRoot),
-    runGateSchemaStrict(projectRoot),
-    runGateProviderIsolation(projectRoot),
-    runGateOnSuccessBan(projectRoot),
-    runGateOptimisticCoverage(projectRoot),
-    runGateDarkKnightCoverage(projectRoot),
-    await runGateWitnessCoverage(projectRoot),
+    runGate1(projectRoot, config),
+    runGate2(projectRoot, config),
+    runGate3(projectRoot, config),
+    runGate4(projectRoot, config),
+    runGateBroadcastRoomScoping(projectRoot, config),
+    runGateSchemaCoverage(projectRoot, config),
+    runGateSchemaStrict(projectRoot, config),
+    runGateProviderIsolation(projectRoot, config),
+    runGateOnSuccessBan(projectRoot, config),
+    runGateOptimisticCoverage(projectRoot, config),
+    runGateAuditCoverage(projectRoot, config),
+    await runGateWitnessCoverage(projectRoot, config),
   ];
 
   const allPassed = results.every((r) => r.skipped || r.passed);

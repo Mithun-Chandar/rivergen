@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { DomainNames } from "./naming";
+import type { GeneratorConfig } from "./config";
 
 // ─── Satellite file auto-registration ──────────────────────────────────────────
 //
@@ -91,7 +92,9 @@ export function registerWsEventCacheAudit(
 }
 
 /**
- * Register domain listener in tools/dark-knight/phase5-trace-coverage-audit.ts.
+ * Register domain listener in the phase5-trace-coverage-audit.ts file.
+ * The file is located at `auditDir/phase5-trace-coverage-audit.ts`.
+ * If the file does not exist the function returns silently.
  *
  * Adds:
  *   1. An import line: import { registerDocListeners } from "../../apps/api/...";
@@ -100,10 +103,11 @@ export function registerWsEventCacheAudit(
 export function registerPhase5Listener(
   projectRoot: string,
   n: DomainNames,
+  auditDir: string,
 ): void {
   const filePath = path.join(
     projectRoot,
-    "tools/dark-knight/phase5-trace-coverage-audit.ts",
+    `${auditDir}/phase5-trace-coverage-audit.ts`,
   );
   if (!fs.existsSync(filePath)) return;
 
@@ -138,24 +142,6 @@ export function registerPhase5Listener(
   fs.writeFileSync(filePath, content, "utf-8");
 }
 
-const SATELLITE_MAP: Array<{
-  file: string;
-  register: (projectRoot: string, n: DomainNames) => void;
-}> = [
-  {
-    file: "packages/shared/src/event-entity-map.ts",
-    register: registerEventEntityMap,
-  },
-  {
-    file: "apps/web/src/providers/ws-event-cache-audit.ts",
-    register: registerWsEventCacheAudit,
-  },
-  {
-    file: "tools/dark-knight/phase5-trace-coverage-audit.ts",
-    register: registerPhase5Listener,
-  },
-];
-
 /**
  * Run all satellite registrations for a domain.
  * Only returns files that actually exist in the project and were updated.
@@ -164,10 +150,23 @@ const SATELLITE_MAP: Array<{
 export function registerSatelliteFiles(
   projectRoot: string,
   n: DomainNames,
+  config?: GeneratorConfig,
 ): string[] {
+  const auditDir = config?.auditDir ?? "witness";
+  const phase5Path = `${auditDir}/phase5-trace-coverage-audit.ts`;
+
+  const satellites: Array<{
+    file: string;
+    register: (projectRoot: string, n: DomainNames) => void;
+  }> = [
+    { file: "packages/shared/src/event-entity-map.ts", register: registerEventEntityMap },
+    { file: "apps/web/src/providers/ws-event-cache-audit.ts", register: registerWsEventCacheAudit },
+    { file: phase5Path, register: (p, d) => registerPhase5Listener(p, d, auditDir) },
+  ];
+
   const registered: string[] = [];
 
-  for (const { file, register } of SATELLITE_MAP) {
+  for (const { file, register } of satellites) {
     if (!fs.existsSync(path.join(projectRoot, file))) continue;
     try {
       register(projectRoot, n);

@@ -68,6 +68,12 @@ import {
 // TODO: import your ${E} entity type once defined
 // import type { ${E} } from "your-types-package";
 
+// FIELD SHAPE LAW: the payload object spread into applyEntity* becomes what
+// useQuery returns. Field names in eventFactory.publish() payload MUST match
+// the REST API response shape — the same names the UI reads from useQuery data.
+// A mismatch (e.g. "creatorId" in WS but "authorId" in REST) causes the WS
+// projection to write a field the UI never reads, silently losing the update.
+// Cross-check with your API route's select/include shape before adding fields.
 type AnyPayload = Record<string, unknown>;
 
 // ── ${createdEvent} ──────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import path from "node:path";
 import { collectFiles, readSourceFile } from "./utils";
 import type { GateResult, GateViolation } from "./types";
+import type { GeneratorConfig } from "../config";
 
 const GATE_ID = "gate-optimistic-coverage";
 const GATE_NAME = "Gate: Optimistic UI Coverage (onMutate + onError)";
@@ -35,10 +36,10 @@ const GATE_NAME = "Gate: Optimistic UI Coverage (onMutate + onError)";
  *   Template output: every useMutation block includes onMutate + onError ✓
  *   Gate alignment:  both callbacks are required in every generated mutation hook ✓
  */
-export function runGateOptimisticCoverage(projectRoot: string): GateResult {
+export function runGateOptimisticCoverage(projectRoot: string, config: GeneratorConfig): GateResult {
   const violations: GateViolation[] = [];
 
-  const hooksDir = path.join(projectRoot, "apps/web/src/hooks");
+  const hooksDir = path.join(projectRoot, config.web.hooksDir);
   const hookFiles = collectFiles(
     hooksDir,
     (name) => name.endsWith(".ts") || name.endsWith(".tsx"),

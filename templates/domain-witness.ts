@@ -119,16 +119,25 @@ export function renderWitnessFile(n: DomainNames): string {
     //   // 3. Apply delete event — assert entity is gone`;
 
   return `import type { DomainWitness, WitnessAssertion } from "@rivergen/witness";
-// Uncomment when filling lifecycle TODOs:
-// import type { QueryClient } from "@tanstack/react-query";
-// import { ${projectionImports} } from "../lib/projections/${d}-projections";
+// DO NOT import projection functions at the top level here.
+// Projection files import React, which cannot load in the Node.js subprocess
+// that runs Layer 3. Importing them here will cause Gate #12 Layer 3 to report
+// a warning and silently drop all assertions for this witness file.
+// Instead, use dynamic import() inside lifecycle() if you need a projection fn,
+// or copy the apply* call inline after seeding the query client directly.
+//
+// import type { QueryClient } from "@tanstack/react-query"; // safe — types only
+// import { ${projectionImports} } from "../lib/projections/${d}-projections"; // ← BREAKS Layer 3
 
 // ── Payload type ───────────────────────────────────────────────────────────────
 // TODO: Add every field that eventFactory.publish() sends for ${E} events.
+//       Field names here MUST match the REST API response shape exactly — the
+//       same names the UI reads from useQuery data. A mismatch means the WS
+//       projection writes a field the UI never reads, causing silent data loss.
 //       Every field in requiredFields[] MUST appear here.
 export interface ${E}Payload {
   ${e}Id: string;
-  // TODO: add remaining fields
+  // TODO: add remaining fields (copy from the API response type, not the DB model)
 }
 
 // ── Witness ────────────────────────────────────────────────────────────────────
