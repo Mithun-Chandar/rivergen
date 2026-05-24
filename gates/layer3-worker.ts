@@ -46,25 +46,21 @@ interface Layer3BatchResult {
 }
 
 // ─── QueryClient resolution ────────────────────────────────────────────────────
+//
+// Always use MinimalQueryClient — never the real @tanstack/query-core QueryClient.
+//
+// The real QueryClient.setQueriesData({ type: "active" }, ...) only iterates
+// queries that have live React observers. In this subprocess there are none,
+// so any projection that calls setQueriesData({ type: "active" }) would be a
+// no-op, silently leaving caches stale and causing deletion assertions to fail.
+//
+// MinimalQueryClient treats every stored entry as active, which is the correct
+// behaviour for a headless field-continuity proof runner.
 
 type QueryClientCtor = new () => unknown;
-let _resolvedCtor: QueryClientCtor | null = null;
-let _resolutionDone = false;
 
-async function resolveQueryClientCtor(): Promise<QueryClientCtor> {
-  if (_resolutionDone) return _resolvedCtor ?? MinimalQueryClient;
-  _resolutionDone = true;
-
-  try {
-    const mod = await import("@tanstack/query-core");
-    if (typeof mod.QueryClient === "function") {
-      _resolvedCtor = mod.QueryClient as QueryClientCtor;
-    }
-  } catch {
-    // Not available — use MinimalQueryClient, which satisfies empty stubs
-  }
-
-  return _resolvedCtor ?? MinimalQueryClient;
+function resolveQueryClientCtor(): QueryClientCtor {
+  return MinimalQueryClient;
 }
 
 class MinimalQueryClient {
@@ -202,7 +198,7 @@ async function processFile(
     };
   }
 
-  const Ctor = await resolveQueryClientCtor();
+  const Ctor = resolveQueryClientCtor();
 
   type Assertion = { name: string; ok: boolean; detail?: string };
   const allAssertions: Assertion[] = [];

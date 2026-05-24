@@ -100,13 +100,13 @@ After `rivergen gen`, the architecture exists. You fill in business logic. The g
 | **#2** Listener → broadcast chain | The full subscribe → broadcast → emit path is wired |
 | **#3** Dispatcher → projection | Every WS event routes through a dispatcher to a projection function |
 | **#4** Projection → entity-cache | Projections use entity-cache helpers — no raw `setQueryData` |
-| Schema coverage | Every emitted event has a registered Zod schema |
-| Schema `.strict()` | Every schema uses `.strict()` — prevents silent field stripping at publish time |
-| Room scoping | Private entities are scoped to rooms, not broadcast globally |
-| Provider isolation | `WebSocketProvider` does not import entity-cache |
-| No `onSuccess` writes | Cache convergence belongs to projections only |
-| Optimistic coverage | Every mutation has `onMutate` + `onError` |
-| Event Audit Coverage | Every event is covered in payload continuity audit artifacts (skipped if no artifacts present) |
+| **#5** Schema coverage | Every emitted event has a registered Zod schema |
+| **#6** Schema `.strict()` | Every schema uses `.strict()` — prevents silent field stripping at publish time |
+| **#7** Room scoping | Private entities are scoped to rooms, not broadcast globally |
+| **#8** Provider isolation | `WebSocketProvider` does not import entity-cache |
+| **#9** No `onSuccess` writes | Cache convergence belongs to projections only |
+| **#10** Optimistic coverage | Every mutation has `onMutate` + `onError` |
+| **#11** Event Audit Coverage | Every event is covered in payload continuity audit artifacts (skipped if no artifacts present) |
 | **#12** Witness coverage | Every broadcast event has a complete witness entry |
 
 **Gate #12 is the progress signal** — after `rivergen gen` it passes immediately but Layer 3 (the projection proof) shows as a stub until you fill the `lifecycle()` function. All other gates pass immediately after generation.
@@ -314,7 +314,7 @@ Options:
 
 ## Why this exists
 
-RiverGen came out of building [Sodium](https://github.com/mithunchandrakanth/sodium), a collaborative workspace product. In v1, realtime worked — until it didn't.
+RiverGen came out of building [Sodium](https://github.com/Mithun-Chandar/sodiumv2), a collaborative workspace product. In v1, realtime worked — until it didn't.
 
 Ghost cards that wouldn't go away. Stale data that only corrected on navigation. Fields the backend sent that the frontend never rendered. Each fix added another competing data path. The architecture became something only one person on the team fully understood. Nobody wanted to add new realtime domains.
 
