@@ -1,0 +1,4 @@
+.github/
+artifacts/
+*.test.ts
+CONTRIBUTING.md
