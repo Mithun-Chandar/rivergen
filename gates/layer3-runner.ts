@@ -29,39 +29,31 @@ const workerPath = path.join(
  */
 function resolveTsxBin(projectRoot: string): string {
   // Package root is one level above this file's gates/ directory.
-  // tsx is a declared dependency so it is always present in the package's
-  // own node_modules — whether installed locally or globally.
   const packageRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     "..",
   );
 
-  // Legacy: sodium-v2 monorepo had generator 3 levels deep.
-  const legacyWorkspaceRoot = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    "..",
-    "..",
-    "..",
-  );
-
-  const candidates = [
-    // Package's own tsx — always correct for global and local installs
-    path.join(packageRoot, "node_modules", "tsx", "dist", "cli.mjs"),
-    // Target project root (if target project has its own tsx)
-    path.join(projectRoot, "node_modules", "tsx", "dist", "cli.mjs"),
-    // One level above target project root (monorepo root)
-    path.join(projectRoot, "..", "node_modules", "tsx", "dist", "cli.mjs"),
-    // Legacy sodium-v2 monorepo path
-    path.join(legacyWorkspaceRoot, "node_modules", "tsx", "dist", "cli.mjs"),
-  ];
-
-  for (const candidate of candidates) {
-    const resolved = path.resolve(candidate);
-    if (existsSync(resolved)) return resolved;
+  // Walk up from a directory checking node_modules/tsx at each level.
+  // Mirrors npm/pnpm hoisting: pnpm puts the CLI's tsx sibling at
+  //   .pnpm/@rivergen+cli@x.y.z/node_modules/tsx  (2 hops up from pkgRoot)
+  // npm hoists it to the project root (found when walking from projectRoot).
+  function findTsx(startDir: string): string | null {
+    let dir = startDir;
+    while (true) {
+      const candidate = path.join(dir, "node_modules", "tsx", "dist", "cli.mjs");
+      if (existsSync(candidate)) return candidate;
+      const parent = path.dirname(dir);
+      if (parent === dir) return null;
+      dir = parent;
+    }
   }
 
-  // Fallback: tsx on PATH (npx tsx resolves it)
-  return "tsx";
+  return (
+    findTsx(packageRoot) ??
+    findTsx(projectRoot) ??
+    "tsx" // last resort: tsx on PATH
+  );
 }
 
 // ─── Public types ─────────────────────────────────────────────────────────────
