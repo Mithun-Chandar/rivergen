@@ -18,6 +18,19 @@ export function renderFrontendHook(n: DomainNames): string {
   const e = n.entityKey;
   const d = n.domainKey;
 
+  // Parse ${varName} placeholders from room template (same logic as query-keys slice).
+  // e.g. "project:${projectId}" → roomVars=["projectId"], roomParams="projectId: string"
+  const roomVars = [...n.roomTemplate.matchAll(/\$\{(\w+)\}/g)].map((m) => m[1]);
+  const roomParams = roomVars.map((v) => `${v}: string`).join(", ");
+  // Produces: { projectId } or {}
+  const roomCtxArg = roomVars.length > 0 ? `{ ${roomVars.join(", ")} }` : `{}`;
+  // Produces the typed ctx block for onMutate room comments
+  const roomScopeComment = roomVars.length > 0
+    ? `// Room scope: ${n.roomTemplate}`
+    : `// No room scope — adjust list key if needed`;
+  // Signature fragment for hooks that need the list scope
+  const scopedParam = roomVars.length > 0 ? `\n  ${roomParams},` : ``;
+
   const createdEvent =
     n.events.find((ev) => ev.endsWith(".created")) ?? n.events[0];
   const updatedEvent = n.events.find((ev) => ev.endsWith(".updated"));
@@ -46,8 +59,8 @@ export function useUpdate${E}() {
       return res.json() as Promise<${E}>;
     },
     onMutate: async ({ id, data }) => {
-      // TODO: determine the list query key context (e.g. workspaceId)
-      const listKey = ${e}Keys.list({ /* TODO */ });
+      ${roomScopeComment}
+      const listKey = ${e}Keys.list(${roomCtxArg});
       await queryClient.cancelQueries({ queryKey: listKey });
       const prev = queryClient.getQueryData<${E}[]>(listKey);
       // Optimistic patch
@@ -82,8 +95,8 @@ export function useDelete${E}() {
       if (!res.ok) throw new Error(await res.text());
     },
     onMutate: async (id) => {
-      // TODO: determine the list query key context (e.g. workspaceId)
-      const listKey = ${e}Keys.list({ /* TODO */ });
+      ${roomScopeComment}
+      const listKey = ${e}Keys.list(${roomCtxArg});
       await queryClient.cancelQueries({ queryKey: listKey });
       const prev = queryClient.getQueryData<${E}[]>(listKey);
       // Optimistic removal
@@ -120,13 +133,11 @@ type ${E} = Record<string, unknown> & { id: string };
 type ${E}Input = Record<string, unknown>;
 
 // ── use${E}List ────────────────────────────────────────────────────────────────
-export function use${E}List(
-  // TODO: add context params (e.g. workspaceId: string)
+export function use${E}List(${scopedParam}
   options?: Partial<UseQueryOptions<${E}[]>>,
 ) {
   return useQuery<${E}[]>({
-    // TODO: pass real context to keys (e.g. ${e}Keys.list({ workspaceId }))
-    queryKey: ${e}Keys.list({}),
+    queryKey: ${e}Keys.list(${roomCtxArg}),
     queryFn: async () => {
       // TODO: replace with real API call
       const res = await fetch("/api/${d}");
@@ -171,8 +182,8 @@ export function useCreate${E}() {
     },
     onMutate: async (data) => {
       const clientTempId = \`temp-${e}-\${Date.now()}-\${Math.random()}\`;
-      // TODO: determine the list query key context (e.g. workspaceId)
-      const listKey = ${e}Keys.list({ /* TODO */ });
+      ${roomScopeComment}
+      const listKey = ${e}Keys.list(${roomCtxArg});
       await queryClient.cancelQueries({ queryKey: listKey });
       const prev = queryClient.getQueryData<${E}[]>(listKey);
       // Optimistic insertion with ghost placeholder

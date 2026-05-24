@@ -38,11 +38,13 @@ export const WebSocketContext = createContext<WebSocketContextValue | null>(
 );
 
 function getSocketUrl(): string | null {
-  const explicitSocketUrl = process.env.NEXT_PUBLIC_WS_URL?.trim();
-  if (explicitSocketUrl) {
-    return explicitSocketUrl;
-  }
-  return null;
+  // Next.js:  set NEXT_PUBLIC_WS_URL in .env.local
+  // Vite:     set VITE_WS_URL in .env  (swap line below for: import.meta.env.VITE_WS_URL)
+  // Generic:  set WS_URL in .env
+  const url =
+    process.env.NEXT_PUBLIC_WS_URL?.trim() ||
+    process.env.WS_URL?.trim();
+  return url || null;
 }
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
