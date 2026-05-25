@@ -80,25 +80,33 @@ rivergen verify                 # run all 12 gates
 
 One spec. One command. Twelve files, all wired:
 
-```
-spec.json
-    └── rivergen gen
-            ├── apps/api/src/<domain>/
-            │       ├── <domain>.router.ts
-            │       ├── <domain>.mutations.ts
-            │       └── <domain>.broadcast.ts
-            ├── apps/api/src/lib/
-            │       ├── event-bus-listeners/<domain>.listener.ts
-            │       └── event-factory/schemas/<domain>.ts
-            ├── apps/web/src/
-            │       ├── hooks/use-<domain>.ts
-            │       ├── lib/projections/<domain>-projections.ts
-            │       ├── lib/cache/domain-dispatchers/<domain>.ts
-            │       ├── providers/ws-bindings/<domain>.ts
-            │       └── witness/<domain>.witness.ts
-            └── packages/shared/src/
-                    ├── entity-projections/<domain>.ts
-                    └── (query-keys/<domain>.ts regenerated)
+```mermaid
+flowchart LR
+    S["spec.json"] --> G(["rivergen gen"])
+    G --> A1
+    G --> W1
+    G --> P1
+
+    subgraph api ["apps/api/"]
+        A1["router.ts"]
+        A2["mutations.ts"]
+        A3["broadcast.ts"]
+        A4["listener.ts"]
+        A5["schemas/&lt;domain&gt;.ts"]
+    end
+
+    subgraph web ["apps/web/"]
+        W1["use-&lt;domain&gt;.ts"]
+        W2["projections.ts"]
+        W3["dispatchers/&lt;domain&gt;.ts"]
+        W4["ws-bindings/&lt;domain&gt;.ts"]
+        W5["&lt;domain&gt;.witness.ts"]
+    end
+
+    subgraph pkg ["packages/shared/"]
+        P1["entity-projections/&lt;domain&gt;.ts"]
+        P2["query-keys/&lt;domain&gt;.ts"]
+    end
 ```
 
 See [docs/guides/first-domain.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/guides/first-domain.md) for a complete step-by-step walkthrough.
