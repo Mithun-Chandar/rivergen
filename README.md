@@ -115,7 +115,16 @@ See [docs/guides/first-domain.md](https://github.com/Mithun-Chandar/rivergen/blo
 
 ## Try it
 
-> **Demo app coming soon.** Clone-and-run example with ghost reconciliation, room-scoped updates, and a complete passing `rivergen verify` transcript.
+**[Live demo →](https://rivergen-phi.vercel.app/)** — 3 domains, 12/12 gates passing, live One River pipeline visualization.
+
+**[Demo source →](https://github.com/Mithun-Chandar/rivergen-demo-1)** — clone and run locally:
+
+```bash
+git clone https://github.com/Mithun-Chandar/rivergen-demo-1
+cd rivergen-demo-1
+pnpm install
+pnpm dev
+```
 
 ---
 
@@ -199,15 +208,15 @@ Pain crystallized into architecture. That is what RiverGen is.
 
 ## Next steps
 
-|                             |                                                                                                                                    |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Understand the architecture | [docs/concepts/](https://github.com/Mithun-Chandar/rivergen/tree/main/docs/concepts)                                               |
-| Build your first domain     | [docs/guides/first-domain.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/guides/first-domain.md)                   |
-| Fill in a Witness file      | [docs/guides/write-a-witness.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/guides/write-a-witness.md)             |
-| Debug a gate failure        | [docs/guides/read-a-failure.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/guides/read-a-failure.md)               |
-| Full spec reference         | [docs/reference/spec.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/reference/spec.md)                             |
-| Full CLI reference          | [docs/reference/cli.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/reference/cli.md)                               |
-| See broken scenarios        | [docs/examples/failure-lab.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/examples/failure-lab.md)                 |
+|                             |                                                                                                                       |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Understand the architecture | [docs/concepts/](https://github.com/Mithun-Chandar/rivergen/tree/main/docs/concepts)                                  |
+| Build your first domain     | [docs/guides/first-domain.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/guides/first-domain.md)       |
+| Fill in a Witness file      | [docs/guides/write-a-witness.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/guides/write-a-witness.md) |
+| Debug a gate failure        | [docs/guides/read-a-failure.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/guides/read-a-failure.md)   |
+| Full spec reference         | [docs/reference/spec.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/reference/spec.md)                 |
+| Full CLI reference          | [docs/reference/cli.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/reference/cli.md)                   |
+| See broken scenarios        | [docs/examples/failure-lab.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/examples/failure-lab.md)     |
 
 ---
 
