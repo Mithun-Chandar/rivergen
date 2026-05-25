@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { GeneratorConfig } from "../config";
+import type { GeneratorConfig } from "../config.js";
 
 // ─── File discovery ────────────────────────────────────────────────────────────
 
@@ -119,7 +119,10 @@ export function resolveWorkspaceEvent(constant: string): string {
  *   io.to(...).emit("event.name", ...)   — direct socket emit
  *   broadcastX(io, "event.name", ...)    — broadcast helper call
  */
-export function discoverBroadcastEvents(projectRoot: string, config: GeneratorConfig): string[] {
+export function discoverBroadcastEvents(
+  projectRoot: string,
+  config: GeneratorConfig,
+): string[] {
   const apiSrc = path.join(projectRoot, config.api.srcRoot);
   const events = new Set<string>();
 
@@ -217,7 +220,10 @@ export function loadRealtimeEventMap(
  * Reads the EventFactory schema files and returns all registered event type strings.
  * Checks both the legacy monolithic schemas.ts and the slice pattern schemas/<domain>.ts.
  */
-export function loadRegisteredEventTypes(projectRoot: string, config: GeneratorConfig): string[] {
+export function loadRegisteredEventTypes(
+  projectRoot: string,
+  config: GeneratorConfig,
+): string[] {
   const results = new Set<string>();
 
   // ── Legacy path: monolithic schemas.ts ────────────────────────────────────

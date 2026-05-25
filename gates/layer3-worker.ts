@@ -56,7 +56,10 @@ async function resolveQueryClientCtor(): Promise<QueryClientCtor> {
   _resolutionDone = true;
 
   try {
-    const mod = await import("@tanstack/query-core");
+    const queryCoreSpecifier = "@tanstack/query-core";
+    const mod = (await import(queryCoreSpecifier)) as {
+      QueryClient?: QueryClientCtor;
+    };
     if (typeof mod.QueryClient === "function") {
       _resolvedCtor = mod.QueryClient as QueryClientCtor;
     }
@@ -101,7 +104,11 @@ class MinimalQueryClient {
       const queryKey: unknown[] = JSON.parse(keyStr) as unknown[];
       let matches = true;
       if (filters.predicate) {
-        try { matches = filters.predicate({ queryKey }); } catch { matches = false; }
+        try {
+          matches = filters.predicate({ queryKey });
+        } catch {
+          matches = false;
+        }
       } else if (filters.queryKey) {
         const prefix = filters.queryKey;
         matches = prefix.every((v, i) => queryKey[i] === v);
@@ -124,7 +131,11 @@ class MinimalQueryClient {
       const queryKey: unknown[] = JSON.parse(keyStr) as unknown[];
       let matches = true;
       if (filters.predicate) {
-        try { matches = filters.predicate({ queryKey }); } catch { matches = false; }
+        try {
+          matches = filters.predicate({ queryKey });
+        } catch {
+          matches = false;
+        }
       } else if (filters.queryKey) {
         const prefix = filters.queryKey;
         matches = prefix.every((v, i) => queryKey[i] === v);
@@ -143,9 +154,7 @@ interface WitnessLike {
   signals: Record<string, (qc: unknown) => Promise<unknown[]>>;
 }
 
-function findWitnessExport(
-  mod: Record<string, unknown>,
-): WitnessLike | null {
+function findWitnessExport(mod: Record<string, unknown>): WitnessLike | null {
   for (const val of Object.values(mod)) {
     if (
       val !== null &&

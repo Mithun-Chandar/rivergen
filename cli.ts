@@ -21,10 +21,10 @@
  */
 
 import path from "node:path";
-import { buildPlan, renderPlan } from "./plan";
-import { execute } from "./execute";
-import { runAllGates, renderReport } from "./gates/runner";
-import { renderInitPlan, executeInit } from "./init";
+import { buildPlan, renderPlan } from "./plan.js";
+import { execute } from "./execute.js";
+import { runAllGates, renderReport } from "./gates/runner.js";
+import { renderInitPlan, executeInit } from "./init.js";
 
 // ─── Parse args ────────────────────────────────────────────────────────────────
 
@@ -175,10 +175,16 @@ if (command === "gen") {
   console.log(`         a. mutations.ts         → DB call + input validation`);
   console.log(`         b. schemas/<domain>.ts  → event payload fields`);
   console.log(`         c. <domain>.listener.ts → wire subscribe → broadcast`);
-  console.log(`         d. use-<domain>.ts      → query key context in onMutate`);
-  console.log(`         e. <domain>-projections.ts → list key context in applyEntity*()`);
+  console.log(
+    `         d. use-<domain>.ts      → query key context in onMutate`,
+  );
+  console.log(
+    `         e. <domain>-projections.ts → list key context in applyEntity*()`,
+  );
   console.log(`         f. <domain>.witness.ts  → field continuity contract`);
-  console.log(`    2. The 5 barrel _index.ts files were regenerated automatically.`);
+  console.log(
+    `    2. The 5 barrel _index.ts files were regenerated automatically.`,
+  );
   console.log(`    3. Verify all 12 gates pass:`);
   console.log(`         rivergen verify`);
   console.log();

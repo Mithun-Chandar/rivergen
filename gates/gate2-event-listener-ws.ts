@@ -7,9 +7,9 @@ import {
   resolveWorkspaceEvent,
   loadRegisteredEventTypes,
   loadRealtimeEventMap,
-} from "./utils";
-import type { GateResult, GateViolation } from "./types";
-import type { GeneratorConfig } from "../config";
+} from "./utils.js";
+import type { GateResult, GateViolation } from "./types.js";
+import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate2";
 const GATE_NAME = "Gate #2: Event → Listener → Broadcaster → socket.emit";
@@ -45,7 +45,10 @@ const GATE_NAME = "Gate #2: Event → Listener → Broadcaster → socket.emit";
  *   Template output: broadcast${E}Event(io, "event.name", …) → io.to(room).emit(…)
  *   Gate alignment:  .emit("event.name") and (io, "event.name") string literals ✓
  */
-export function runGate2(projectRoot: string, config: GeneratorConfig): GateResult {
+export function runGate2(
+  projectRoot: string,
+  config: GeneratorConfig,
+): GateResult {
   const violations: GateViolation[] = [];
 
   // 1. Collect registered event types

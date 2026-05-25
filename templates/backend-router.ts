@@ -1,4 +1,4 @@
-import type { DomainNames } from "../naming";
+import type { DomainNames } from "../naming.js";
 
 /**
  * Generates the Express router stub for a domain.

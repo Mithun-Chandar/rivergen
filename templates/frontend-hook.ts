@@ -1,4 +1,4 @@
-import type { DomainNames } from "../naming";
+import type { DomainNames } from "../naming.js";
 
 /**
  * Generates the domain hook file for the frontend.
@@ -20,14 +20,17 @@ export function renderFrontendHook(n: DomainNames): string {
 
   // Parse ${varName} placeholders from room template (same logic as query-keys slice).
   // e.g. "project:${projectId}" → roomVars=["projectId"], roomParams="projectId: string"
-  const roomVars = [...n.roomTemplate.matchAll(/\$\{(\w+)\}/g)].map((m) => m[1]);
+  const roomVars = [...n.roomTemplate.matchAll(/\$\{(\w+)\}/g)].map(
+    (m) => m[1],
+  );
   const roomParams = roomVars.map((v) => `${v}: string`).join(", ");
   // Produces: { projectId } or {}
   const roomCtxArg = roomVars.length > 0 ? `{ ${roomVars.join(", ")} }` : `{}`;
   // Produces the typed ctx block for onMutate room comments
-  const roomScopeComment = roomVars.length > 0
-    ? `// Room scope: ${n.roomTemplate}`
-    : `// No room scope — adjust list key if needed`;
+  const roomScopeComment =
+    roomVars.length > 0
+      ? `// Room scope: ${n.roomTemplate}`
+      : `// No room scope — adjust list key if needed`;
   // Signature fragment for hooks that need the list scope
   const scopedParam = roomVars.length > 0 ? `\n  ${roomParams},` : ``;
 
@@ -118,8 +121,9 @@ export function useDelete${E}() {
     : "";
 
   // Room join hook — only generated when the spec has a room template with vars
-  const roomJoinHook = roomVars.length > 0
-    ? `
+  const roomJoinHook =
+    roomVars.length > 0
+      ? `
 // ── useJoin${E}Room ────────────────────────────────────────────────────────────
 // LAW: the server broadcasts ${d} events to a scoped socket.io room.
 // The client MUST join that room or it will never receive those events.
@@ -134,7 +138,7 @@ export function useDelete${E}() {
 // TODO: replace the useEffect above with the correct room variable from your route.
 // The room template for this domain is: ${n.roomTemplate}
 `
-    : "";
+      : "";
 
   return `import {
   useQuery,

@@ -5,9 +5,9 @@ import {
   allMatches,
   lineOf,
   loadRegisteredEventTypes,
-} from "./utils";
-import type { GateResult, GateViolation } from "./types";
-import type { GeneratorConfig } from "../config";
+} from "./utils.js";
+import type { GateResult, GateViolation } from "./types.js";
+import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-schema-coverage";
 const GATE_NAME = "Gate: EventFactory Schema Coverage";
@@ -51,11 +51,16 @@ const GATE_NAME = "Gate: EventFactory Schema Coverage";
  *     broadcastXxxCreated → broadcast${E}Event(io, "event.name", …)) which use string literals.
  *     If the template stops generating per-event helpers, update both regex patterns above.
  */
-export function runGateSchemaCoverage(projectRoot: string, config: GeneratorConfig): GateResult {
+export function runGateSchemaCoverage(
+  projectRoot: string,
+  config: GeneratorConfig,
+): GateResult {
   const violations: GateViolation[] = [];
 
   // 1. Collect registered event types
-  const registeredEvents = new Set(loadRegisteredEventTypes(projectRoot, config));
+  const registeredEvents = new Set(
+    loadRegisteredEventTypes(projectRoot, config),
+  );
 
   // 2. Collect all emitted event strings from broadcast files
   const apiSrc = path.join(projectRoot, config.api.srcRoot);

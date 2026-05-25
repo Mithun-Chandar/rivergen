@@ -7,9 +7,9 @@ import {
   lineOf,
   loadRealtimeEventMap,
   extractSwitchCases,
-} from "./utils";
-import type { GateResult, GateViolation } from "./types";
-import type { GeneratorConfig } from "../config";
+} from "./utils.js";
+import type { GateResult, GateViolation } from "./types.js";
+import type { GeneratorConfig } from "../config.js";
 
 // Loaded once at gate run time
 let _realtimeEventMapCache: Record<string, string> | null = null;
@@ -93,7 +93,10 @@ const SOCKET_LIFECYCLE_EVENTS = new Set([
   "pong",
 ]);
 
-export function runGate3(projectRoot: string, config: GeneratorConfig): GateResult {
+export function runGate3(
+  projectRoot: string,
+  config: GeneratorConfig,
+): GateResult {
   const violations: GateViolation[] = [];
 
   _realtimeEventMapCache = null; // reset cache per run
@@ -119,7 +122,11 @@ export function runGate3(projectRoot: string, config: GeneratorConfig): GateResu
     // Also resolve from imports in state-cache.ts which re-exports them.
 
     // First collect WS_EVENT_* constant definitions from any imported file.
-    const wsConstMap = buildWsConstMap(projectRoot, config, providerSrc.content);
+    const wsConstMap = buildWsConstMap(
+      projectRoot,
+      config,
+      providerSrc.content,
+    );
 
     // Handle: socket.on(CONST, ...) where CONST is a WS_EVENT_* variable
     for (const m of allMatches(
@@ -379,10 +386,7 @@ function buildWsConstMap(
 
     // Scan candidate files that export WS_EVENT_* constants
     const cacheDir = path.dirname(config.web.stateCacheFile);
-    const candidatePaths = [
-      config.web.stateCacheFile,
-      `${cacheDir}/index.ts`,
-    ];
+    const candidatePaths = [config.web.stateCacheFile, `${cacheDir}/index.ts`];
 
     for (const candidatePath of candidatePaths) {
       const src = readSourceFile(candidatePath, projectRoot);

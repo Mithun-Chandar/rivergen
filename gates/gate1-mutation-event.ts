@@ -1,7 +1,7 @@
 import path from "node:path";
-import { collectFiles, readSourceFile, allMatches, lineOf } from "./utils";
-import type { GateResult, GateViolation } from "./types";
-import type { GeneratorConfig } from "../config";
+import { collectFiles, readSourceFile, allMatches, lineOf } from "./utils.js";
+import type { GateResult, GateViolation } from "./types.js";
+import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate1";
 const GATE_NAME = "Gate #1: Mutation → EventFactory.publish";
@@ -32,7 +32,10 @@ const GATE_NAME = "Gate #1: Mutation → EventFactory.publish";
  *   Template output: EventFactory.publish("event.name", {...})
  *   Gate alignment:  checks EventFactory import + .publish() call ✓
  */
-export function runGate1(projectRoot: string, config: GeneratorConfig): GateResult {
+export function runGate1(
+  projectRoot: string,
+  config: GeneratorConfig,
+): GateResult {
   const violations: GateViolation[] = [];
 
   const apiSrc = path.join(projectRoot, config.api.srcRoot);

@@ -1,6 +1,10 @@
-import { readSourceFile, allMatches, discoverBroadcastEvents } from "./utils";
-import type { GateResult, GateViolation } from "./types";
-import type { GeneratorConfig } from "../config";
+import {
+  readSourceFile,
+  allMatches,
+  discoverBroadcastEvents,
+} from "./utils.js";
+import type { GateResult, GateViolation } from "./types.js";
+import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-audit-coverage";
 const GATE_NAME = "Gate: Event Audit Coverage";
@@ -23,7 +27,10 @@ const GATE_NAME = "Gate: Event Audit Coverage";
  * Discovery: re-uses the same broadcast-file emit scan that gates
  * #2 and schema-coverage use, producing the canonical event list.
  */
-export function runGateAuditCoverage(projectRoot: string, config: GeneratorConfig): GateResult {
+export function runGateAuditCoverage(
+  projectRoot: string,
+  config: GeneratorConfig,
+): GateResult {
   const violations: GateViolation[] = [];
 
   const auditDir = config.auditDir ?? "witness";
@@ -115,7 +122,10 @@ export function runGateAuditCoverage(projectRoot: string, config: GeneratorConfi
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function extractPhase4Events(projectRoot: string, filePath: string): Set<string> {
+function extractPhase4Events(
+  projectRoot: string,
+  filePath: string,
+): Set<string> {
   const src = readSourceFile(filePath, projectRoot);
   if (!src) return new Set();
 
@@ -130,7 +140,10 @@ function extractPhase4Events(projectRoot: string, filePath: string): Set<string>
   return keys;
 }
 
-function extractPhase5Events(projectRoot: string, filePath: string): Set<string> {
+function extractPhase5Events(
+  projectRoot: string,
+  filePath: string,
+): Set<string> {
   const src = readSourceFile(filePath, projectRoot);
   if (!src) return new Set();
 
@@ -145,7 +158,10 @@ function extractPhase5Events(projectRoot: string, filePath: string): Set<string>
   return types;
 }
 
-function extractPhase6Events(projectRoot: string, filePath: string): Set<string> {
+function extractPhase6Events(
+  projectRoot: string,
+  filePath: string,
+): Set<string> {
   const src = readSourceFile(filePath, projectRoot);
   if (!src) return new Set();
 

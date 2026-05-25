@@ -5,17 +5,17 @@ import {
   allMatches,
   collectFiles,
   discoverBroadcastEvents,
-} from "./utils";
+} from "./utils.js";
 import {
   parseWitnessDomain,
   parseWitnessRequiredFields,
   extractSchemaFields,
   detectBroadcastStyle,
   extractSelectiveBroadcastFields,
-} from "./witness-parse";
-import { runLayer3 } from "./layer3-runner";
-import type { GateResult, GateViolation } from "./types";
-import type { GeneratorConfig } from "../config";
+} from "./witness-parse.js";
+import { runLayer3 } from "./layer3-runner.js";
+import type { GateResult, GateViolation } from "./types.js";
+import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-witness-coverage";
 const GATE_NAME = "Gate #12: Witness — Field Continuity Coverage";
@@ -151,12 +151,16 @@ export async function runGateWitnessCoverage(
   if (errorViolations.length === 0) {
     summary = `${allBroadcastEvents.length}/${allBroadcastEvents.length} events covered, schema+broadcast contracts satisfied.`;
     if (layer3.totalAssertions > 0) {
-      notes.push(`Layer 3: ${layer3.passedAssertions}/${layer3.totalAssertions} projection assertions passed.`);
+      notes.push(
+        `Layer 3: ${layer3.passedAssertions}/${layer3.totalAssertions} projection assertions passed.`,
+      );
     } else if (layer3.skippedFiles > 0) {
       notes.push(
         `Layer 3: ${layer3.skippedFiles} witness file(s) are stubs — fill the lifecycle() function to activate the projection proof.`,
       );
-      notes.push(`  Until then, Layer 3 cannot verify that fields survive the projection.`);
+      notes.push(
+        `  Until then, Layer 3 cannot verify that fields survive the projection.`,
+      );
     }
   } else {
     const parts: string[] = [];

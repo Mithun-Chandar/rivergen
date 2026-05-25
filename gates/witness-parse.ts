@@ -6,7 +6,7 @@
  * no violation rather than a false positive.
  */
 
-import { allMatches } from "./utils";
+import { allMatches } from "./utils.js";
 
 // ─── Regex escape ─────────────────────────────────────────────────────────────
 
@@ -165,9 +165,7 @@ export type BroadcastStyle = "pass-through" | "selective" | "unknown";
  */
 export function detectBroadcastStyle(content: string): BroadcastStyle {
   // All emit calls in this file
-  const emitMatches = [
-    ...allMatches(content, /\.emit\s*\(([^)]+)\)/g),
-  ];
+  const emitMatches = [...allMatches(content, /\.emit\s*\(([^)]+)\)/g)];
 
   if (emitMatches.length === 0) return "unknown";
 
@@ -203,10 +201,7 @@ export function extractSelectiveBroadcastFields(
 
     // Extract field names from the object literal: "fieldName: ..."
     const fields: string[] = [];
-    for (const fm of allMatches(
-      bodyContent,
-      /([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g,
-    )) {
+    for (const fm of allMatches(bodyContent, /([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g)) {
       fields.push(fm[1]);
     }
     map.set(eventName, fields);

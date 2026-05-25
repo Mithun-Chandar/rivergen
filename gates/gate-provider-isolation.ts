@@ -1,6 +1,6 @@
-import { readSourceFile, lineOf, allMatches } from "./utils";
-import type { GateResult, GateViolation } from "./types";
-import type { GeneratorConfig } from "../config";
+import { readSourceFile, lineOf, allMatches } from "./utils.js";
+import type { GateResult, GateViolation } from "./types.js";
+import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-provider-isolation";
 const GATE_NAME = "Gate: WebSocketProvider Entity-Cache Isolation";
@@ -34,7 +34,10 @@ const GATE_NAME = "Gate: WebSocketProvider Entity-Cache Isolation";
  *   Template output: provider calls applyRealtimeEventToCache() — never imports entity-cache ✓
  *   Gate alignment:  import ban and direct-call ban enforced ✓
  */
-export function runGateProviderIsolation(projectRoot: string, config: GeneratorConfig): GateResult {
+export function runGateProviderIsolation(
+  projectRoot: string,
+  config: GeneratorConfig,
+): GateResult {
   const violations: GateViolation[] = [];
 
   const relPath = config.web.providerFile;

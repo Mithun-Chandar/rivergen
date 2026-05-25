@@ -1,4 +1,4 @@
-import type { DomainNames } from "../naming";
+import type { DomainNames } from "../naming.js";
 
 /**
  * Generates the socket.io broadcast helper for a domain.
@@ -42,8 +42,8 @@ export function renderBackendBroadcast(n: DomainNames): string {
 
   const individualBroadcasts = n.events
     .map((event) => {
-      const actionName = event.split(".").slice(1).join("_");
-      const fnName = `broadcast${E}${actionName.charAt(0).toUpperCase() + actionName.slice(1).replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())}`;
+      const actionName = event.split(".").slice(1).join("-");
+      const fnName = `broadcast${E}${toPascalIdentifier(actionName)}`;
       return `
 export function ${fnName}(
   io: SocketServerLike,
@@ -75,4 +75,12 @@ ${roomBlock}
 }
 ${individualBroadcasts}
 `;
+}
+
+function toPascalIdentifier(value: string): string {
+  return value
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join("");
 }

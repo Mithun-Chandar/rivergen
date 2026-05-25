@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { DomainNames } from "./naming";
+import type { DomainNames } from "./naming.js";
 
 // ─── Apply record shape ────────────────────────────────────────────────────────
 

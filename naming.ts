@@ -1,5 +1,5 @@
-import type { V2DomainSpec } from "./schema";
-import type { GeneratorConfig } from "./config";
+import type { V2DomainSpec } from "./schema.js";
+import type { GeneratorConfig } from "./config.js";
 
 // ─── Output shape ──────────────────────────────────────────────────────────────
 

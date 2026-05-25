@@ -1,17 +1,17 @@
-import { runGate1 } from "./gate1-mutation-event";
-import { runGate2 } from "./gate2-event-listener-ws";
-import { runGate3 } from "./gate3-ws-dispatcher-projection";
-import { runGate4 } from "./gate4-projection-entity-cache";
-import { runGateBroadcastRoomScoping } from "./gate-broadcast-room-scoping";
-import { runGateSchemaCoverage } from "./gate-schema-coverage";
-import { runGateSchemaStrict } from "./gate-schema-strict";
-import { runGateProviderIsolation } from "./gate-provider-isolation";
-import { runGateOnSuccessBan } from "./gate-onsuccess-ban";
-import { runGateOptimisticCoverage } from "./gate-optimistic-coverage";
-import { runGateAuditCoverage } from "./gate-audit-coverage";
-import { runGateWitnessCoverage } from "./gate-witness-coverage";
-import type { GateResult, RunnerReport } from "./types";
-import { loadConfig } from "../config";
+import { runGate1 } from "./gate1-mutation-event.js";
+import { runGate2 } from "./gate2-event-listener-ws.js";
+import { runGate3 } from "./gate3-ws-dispatcher-projection.js";
+import { runGate4 } from "./gate4-projection-entity-cache.js";
+import { runGateBroadcastRoomScoping } from "./gate-broadcast-room-scoping.js";
+import { runGateSchemaCoverage } from "./gate-schema-coverage.js";
+import { runGateSchemaStrict } from "./gate-schema-strict.js";
+import { runGateProviderIsolation } from "./gate-provider-isolation.js";
+import { runGateOnSuccessBan } from "./gate-onsuccess-ban.js";
+import { runGateOptimisticCoverage } from "./gate-optimistic-coverage.js";
+import { runGateAuditCoverage } from "./gate-audit-coverage.js";
+import { runGateWitnessCoverage } from "./gate-witness-coverage.js";
+import type { GateResult, RunnerReport } from "./types.js";
+import { loadConfig } from "../config.js";
 
 // ─── Runner ────────────────────────────────────────────────────────────────────
 
@@ -36,9 +36,7 @@ import { loadConfig } from "../config";
  *   Gate     — Audit coverage (every event in Phase 4/5/6)
  *   Gate #12 — Witness coverage (every broadcast event has a witness file entry)
  */
-export async function runAllGates(
-  projectRoot: string,
-): Promise<RunnerReport> {
+export async function runAllGates(projectRoot: string): Promise<RunnerReport> {
   const config = loadConfig(projectRoot);
 
   const results: GateResult[] = [

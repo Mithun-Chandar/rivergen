@@ -1,17 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import { buildPlan, renderPlan, type GeneratorPlan } from "./plan";
-import { checkDependencies, installMissing } from "./dep-enforcer";
-import { buildApplyRecord, writeApplyRecord } from "./apply-record";
-import { loadConfig } from "./config";
-import { regenerateBarrel, scanDomainKeys } from "./barrel";
-import { renderBarrelSchemas } from "./templates/init-barrel-schemas";
-import { renderBarrelDispatchers } from "./templates/init-barrel-dispatchers";
-import { renderBarrelWsBindings } from "./templates/init-barrel-ws-bindings";
-import { renderBarrelEntityProjections } from "./templates/init-barrel-entity-projections";
-import { renderBarrelQueryKeys } from "./templates/init-barrel-query-keys";
-import { registerSatelliteFiles } from "./satellite";
+import { buildPlan, renderPlan, type GeneratorPlan } from "./plan.js";
+import { checkDependencies, installMissing } from "./dep-enforcer.js";
+import { buildApplyRecord, writeApplyRecord } from "./apply-record.js";
+import { loadConfig } from "./config.js";
+import { regenerateBarrel, scanDomainKeys } from "./barrel.js";
+import { renderBarrelSchemas } from "./templates/init-barrel-schemas.js";
+import { renderBarrelDispatchers } from "./templates/init-barrel-dispatchers.js";
+import { renderBarrelWsBindings } from "./templates/init-barrel-ws-bindings.js";
+import { renderBarrelEntityProjections } from "./templates/init-barrel-entity-projections.js";
+import { renderBarrelQueryKeys } from "./templates/init-barrel-query-keys.js";
+import { registerSatelliteFiles } from "./satellite.js";
 
 // ─── Execute options ────────────────────────────────────────────────────────────
 
@@ -95,8 +95,8 @@ export function execute(
     const blockingErrors = plan.errors.filter((e) => {
       // Dep errors are handled above by --install; skip them here
       if (e.startsWith("Missing required packages")) return false;
-      // --force overrides the "files already exist" error (handled at step 4)
-      if (options.force && /^\d+ file\(s\) already exist/.test(e)) return false;
+      // Existing-file conflicts are handled consistently at step 4.
+      if (/^\d+ file\(s\) already exist/.test(e)) return false;
       return true;
     });
     if (blockingErrors.length > 0) {
@@ -187,7 +187,11 @@ export function execute(
   // 7. Register satellite files (event-entity-map, ws-event-cache-audit, phase5)
   // Only shown when files actually exist in the project and were updated.
   try {
-    const satelliteFiles = registerSatelliteFiles(projectRoot, plan.names, config);
+    const satelliteFiles = registerSatelliteFiles(
+      projectRoot,
+      plan.names,
+      config,
+    );
     if (satelliteFiles.length > 0) {
       console.log("  Updating satellite files...\n");
       for (const sf of satelliteFiles) {

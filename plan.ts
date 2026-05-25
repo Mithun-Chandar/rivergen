@@ -1,22 +1,22 @@
 import fs from "node:fs";
 import path from "node:path";
-import { validateSpec } from "./schema";
-import { deriveNames, type DomainNames } from "./naming";
-import { loadConfig, type GeneratorConfig } from "./config";
-import { checkDependencies, type DepEnforcerResult } from "./dep-enforcer";
-import { detectCollisions } from "./barrel";
-import { renderBackendRouter } from "./templates/backend-router";
-import { renderBackendMutations } from "./templates/backend-mutations";
-import { renderBackendListener } from "./templates/backend-listener";
-import { renderBackendBroadcast } from "./templates/backend-broadcast";
-import { renderFrontendProjection } from "./templates/frontend-projection";
-import { renderFrontendHook } from "./templates/frontend-hook";
-import { renderDomainSchemaSlice } from "./templates/domain-slice-schemas";
-import { renderDomainDispatcherSlice } from "./templates/domain-slice-dispatchers";
-import { renderDomainWsBindingsSlice } from "./templates/domain-slice-ws-bindings";
-import { renderDomainEntityProjectionSlice } from "./templates/domain-slice-entity-projection";
-import { renderDomainQueryKeysSlice } from "./templates/domain-slice-query-keys";
-import { renderWitnessFile } from "./templates/domain-witness";
+import { validateSpec } from "./schema.js";
+import { deriveNames, type DomainNames } from "./naming.js";
+import { loadConfig, type GeneratorConfig } from "./config.js";
+import { checkDependencies, type DepEnforcerResult } from "./dep-enforcer.js";
+import { detectCollisions } from "./barrel.js";
+import { renderBackendRouter } from "./templates/backend-router.js";
+import { renderBackendMutations } from "./templates/backend-mutations.js";
+import { renderBackendListener } from "./templates/backend-listener.js";
+import { renderBackendBroadcast } from "./templates/backend-broadcast.js";
+import { renderFrontendProjection } from "./templates/frontend-projection.js";
+import { renderFrontendHook } from "./templates/frontend-hook.js";
+import { renderDomainSchemaSlice } from "./templates/domain-slice-schemas.js";
+import { renderDomainDispatcherSlice } from "./templates/domain-slice-dispatchers.js";
+import { renderDomainWsBindingsSlice } from "./templates/domain-slice-ws-bindings.js";
+import { renderDomainEntityProjectionSlice } from "./templates/domain-slice-entity-projection.js";
+import { renderDomainQueryKeysSlice } from "./templates/domain-slice-query-keys.js";
+import { renderWitnessFile } from "./templates/domain-witness.js";
 
 // ─── Plan shape ────────────────────────────────────────────────────────────────
 
@@ -158,7 +158,10 @@ export function buildPlan(
   // 6. Build file list (6 domain files + 5 domain slices + 1 witness = 12 total)
   const renderPairs: Array<[string, () => string]> = [
     [names.apiRouterFile, () => renderBackendRouter(names)],
-    [names.apiMutationsFile, () => renderBackendMutations(names, config.dbImport)],
+    [
+      names.apiMutationsFile,
+      () => renderBackendMutations(names, config.dbImport),
+    ],
     [names.apiBroadcastFile, () => renderBackendBroadcast(names)],
     [names.apiListenerFile, () => renderBackendListener(names)],
     [names.webProjectionFile, () => renderFrontendProjection(names)],

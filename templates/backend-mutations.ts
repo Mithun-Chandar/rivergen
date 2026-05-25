@@ -1,4 +1,4 @@
-import type { DomainNames } from "../naming";
+import type { DomainNames } from "../naming.js";
 
 /**
  * Generates the mutations file for a domain.
@@ -8,7 +8,10 @@ import type { DomainNames } from "../naming";
  *
  * STUB — fill in DB calls and payload construction where marked TODO.
  */
-export function renderBackendMutations(n: DomainNames, dbImport?: string): string {
+export function renderBackendMutations(
+  n: DomainNames,
+  dbImport?: string,
+): string {
   const E = n.entityPascal;
   const e = n.entityKey;
   const d = n.domainKey;

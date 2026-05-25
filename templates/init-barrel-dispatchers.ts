@@ -1,5 +1,3 @@
-import { QueryClient } from "@tanstack/react-query";
-
 /**
  * Template: init-barrel-dispatchers
  *
@@ -12,7 +10,6 @@ import { QueryClient } from "@tanstack/react-query";
  */
 
 type AnyPayload = Record<string, unknown> | null | undefined;
-type DispatchHandler = (payload: AnyPayload, queryClient: QueryClient) => void;
 
 export function renderBarrelDispatchers(domainKeys: string[]): string {
   const imports = domainKeys

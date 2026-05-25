@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { DomainNames } from "./naming";
-import type { GeneratorConfig } from "./config";
+import type { DomainNames } from "./naming.js";
+import type { GeneratorConfig } from "./config.js";
 
 // ─── Satellite file auto-registration ──────────────────────────────────────────
 //
@@ -159,9 +159,18 @@ export function registerSatelliteFiles(
     file: string;
     register: (projectRoot: string, n: DomainNames) => void;
   }> = [
-    { file: "packages/shared/src/event-entity-map.ts", register: registerEventEntityMap },
-    { file: "apps/web/src/providers/ws-event-cache-audit.ts", register: registerWsEventCacheAudit },
-    { file: phase5Path, register: (p, d) => registerPhase5Listener(p, d, auditDir) },
+    {
+      file: "packages/shared/src/event-entity-map.ts",
+      register: registerEventEntityMap,
+    },
+    {
+      file: "apps/web/src/providers/ws-event-cache-audit.ts",
+      register: registerWsEventCacheAudit,
+    },
+    {
+      file: phase5Path,
+      register: (p, d) => registerPhase5Listener(p, d, auditDir),
+    },
   ];
 
   const registered: string[] = [];

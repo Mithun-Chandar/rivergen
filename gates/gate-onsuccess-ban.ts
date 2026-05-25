@@ -1,7 +1,7 @@
 import path from "node:path";
-import { collectFiles, readSourceFile } from "./utils";
-import type { GateResult, GateViolation } from "./types";
-import type { GeneratorConfig } from "../config";
+import { collectFiles, readSourceFile } from "./utils.js";
+import type { GateResult, GateViolation } from "./types.js";
+import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-onsuccess-ban";
 const GATE_NAME = "Gate: No Cache Writes in onSuccess";
@@ -44,7 +44,10 @@ const GATE_NAME = "Gate: No Cache Writes in onSuccess";
  *   Template output: onSuccess intentionally omitted (comment: "// onSuccess: intentionally omitted")
  *   Gate alignment:  no cache writes in generated onSuccess — nothing to fire ✓
  */
-export function runGateOnSuccessBan(projectRoot: string, config: GeneratorConfig): GateResult {
+export function runGateOnSuccessBan(
+  projectRoot: string,
+  config: GeneratorConfig,
+): GateResult {
   const violations: GateViolation[] = [];
 
   const hooksDir = path.join(projectRoot, config.web.hooksDir);

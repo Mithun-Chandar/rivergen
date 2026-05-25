@@ -14,7 +14,7 @@ import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { GateViolation } from "./types";
+import type { GateViolation } from "./types.js";
 
 const workerPath = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -41,7 +41,13 @@ function resolveTsxBin(projectRoot: string): string {
   function findTsx(startDir: string): string | null {
     let dir = startDir;
     while (true) {
-      const candidate = path.join(dir, "node_modules", "tsx", "dist", "cli.mjs");
+      const candidate = path.join(
+        dir,
+        "node_modules",
+        "tsx",
+        "dist",
+        "cli.mjs",
+      );
       if (existsSync(candidate)) return candidate;
       const parent = path.dirname(dir);
       if (parent === dir) return null;
@@ -50,9 +56,7 @@ function resolveTsxBin(projectRoot: string): string {
   }
 
   return (
-    findTsx(packageRoot) ??
-    findTsx(projectRoot) ??
-    "tsx" // last resort: tsx on PATH
+    findTsx(packageRoot) ?? findTsx(projectRoot) ?? "tsx" // last resort: tsx on PATH
   );
 }
 
@@ -111,7 +115,10 @@ export async function runLayer3(
     "..",
     "..",
   );
-  const generatorNodeModules = path.join(generatorWorkspaceRoot, "node_modules");
+  const generatorNodeModules = path.join(
+    generatorWorkspaceRoot,
+    "node_modules",
+  );
   const nodePath = process.env["NODE_PATH"]
     ? `${generatorNodeModules}${path.delimiter}${process.env["NODE_PATH"]}`
     : generatorNodeModules;

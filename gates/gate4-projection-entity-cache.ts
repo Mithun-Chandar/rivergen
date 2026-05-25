@@ -1,7 +1,7 @@
 import path from "node:path";
-import { collectFiles, readSourceFile, allMatches, lineOf } from "./utils";
-import type { GateResult, GateViolation } from "./types";
-import type { GeneratorConfig } from "../config";
+import { collectFiles, readSourceFile, allMatches, lineOf } from "./utils.js";
+import type { GateResult, GateViolation } from "./types.js";
+import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate4";
 const GATE_NAME = "Gate #4: Projection → entity-cache helpers";
@@ -41,7 +41,10 @@ const GATE_NAME = "Gate #4: Projection → entity-cache helpers";
  *   Template output: imports applyEntityCreate/Update/Delete + calls them in every projection fn ✓
  *   Gate alignment:  checks both the import and the absence of direct setQueryData ✓
  */
-export function runGate4(projectRoot: string, config: GeneratorConfig): GateResult {
+export function runGate4(
+  projectRoot: string,
+  config: GeneratorConfig,
+): GateResult {
   const violations: GateViolation[] = [];
 
   const projectionsDir = path.join(projectRoot, config.web.projectionsDir);
