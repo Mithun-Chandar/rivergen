@@ -30,11 +30,11 @@ rivergen plan specs/<domain>.json
 rivergen gen specs/<domain>.json
 
 # 4. Fill TODOs in this order:
-#    a. mutations.ts              → Zod input schema + DB call
+#    a. mutations.ts              → Zod input schema + DB call + eventFactory.publish() payload
 #    b. schemas/<domain>.ts       → add fields BEFORE adding them to eventFactory.publish()
 #    c. <domain>.listener.ts      → wire eventBus.subscribe() → broadcastX()
-#    d. use-<domain>.ts           → add query key context in onMutate
-#    e. <domain>-projections.ts   → add list key context in applyEntity*()
+#    d. use-<domain>.ts           → fill API call URLs only; onMutate list key is generated
+#    e. <domain>-projections.ts   → fill context object in applyEntity*() (projectId etc.)
 #    f. <domain>.witness.ts       → fill payload type, requiredFields, testPayloads,
 #                                   lifecycle(), and signals{} — this is the field
 #                                   continuity contract; Gate #12 enforces it
@@ -191,7 +191,8 @@ Run \`rivergen verify\` before marking any domain task complete. All active gate
   "events": ["myEntity.created", "myEntity.updated", "myEntity.deleted"],
   "room": {
     "template": "project:\${projectId}",
-    "visibilityField": "visibility"
+    "visibilityField": "visibility",
+    "privateRoomTemplate": "user:\${creatorId}"
   }
 }
 \`\`\`
@@ -201,6 +202,16 @@ Run \`rivergen verify\` before marking any domain task complete. All active gate
 - \`eventPrefix\` must match the prefix of every event in \`events[]\`
 - \`events[]\`: dot notation only (\`entity.action\`) — colons are rejected
 - \`room.visibilityField\`: required for private entities — omitting it broadcasts private data to public rooms
+- \`room.privateRoomTemplate\`: **required when \`visibilityField\` is set**. Tells the generator what room expression to use for PRIVATE entities in the broadcast helper. If you omit it, the generated \`broadcast.ts\` contains a \`TODO_private_room\` placeholder and Gate #5 fails immediately.
+
+**Hook call sites carry room-scope parameters.** For \`"project:\${projectId}"\` the generated hooks are:
+\`\`\`ts
+useTaskList(projectId)
+useCreateTask(projectId)
+useUpdateTask(projectId)
+useDeleteTask(projectId)
+\`\`\`
+Pass the room variable from the component's route context — do not call them without it.
 
 ---
 
