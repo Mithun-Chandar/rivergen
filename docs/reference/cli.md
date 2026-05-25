@@ -135,14 +135,14 @@ These files are **not overwritten without `--force`**:
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `apps/api/src/<domain>/<domain>.router.ts`                  | API endpoint URLs                                                               |
 | `apps/api/src/<domain>/<domain>.mutations.ts`               | DB calls, input validation, payload construction                                |
-| `apps/api/src/<domain>/<domain>.broadcast.ts`               | Room routing (TODO left in generated file)                                      |
+| `apps/api/src/<domain>/<domain>.broadcast.ts`               | Nothing when `privateRoomTemplate` is set; private room expression if omitted   |
 | `apps/api/src/lib/event-bus-listeners/<domain>.listener.ts` | Pure wiring — no fill required                                                  |
 | `apps/api/src/lib/event-factory/schemas/<domain>.ts`        | Actual payload fields beyond the `entityId` stub                                |
 | `apps/web/src/lib/projections/<domain>-projections.ts`      | `context` object matching entity-projection slice                               |
-| `apps/web/src/hooks/use-<domain>.ts`                        | API call URLs, entity types, `onMutate` context derivation                      |
+| `apps/web/src/hooks/use-<domain>.ts`                        | API call URLs, entity types                                                     |
 | `apps/web/src/lib/cache/domain-dispatchers/<domain>.ts`     | Pure wiring — no fill required                                                  |
 | `apps/web/src/providers/ws-bindings/<domain>.ts`            | Pure wiring — no fill required                                                  |
-| `packages/shared/src/entity-projections/<domain>.ts`        | Correct query key factories matching your cache key shape                       |
+| `packages/shared/src/entity-projections/<domain>.ts`        | Rarely — room-var-aware key factory is generated correctly from room template   |
 | `apps/web/src/lib/query-keys/<domain>.ts`                   | Rarely — generated correctly from room template                                 |
 | `apps/web/src/witness/<domain>.witness.ts`                  | Payload interface, `requiredFields`, `testPayloads`, `lifecycle()`, `signals{}` |
 

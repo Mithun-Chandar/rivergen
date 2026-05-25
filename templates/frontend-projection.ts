@@ -19,6 +19,28 @@ export function renderFrontendProjection(n: DomainNames): string {
   const updatedEvent = n.events.find((ev) => ev.endsWith(".updated"));
   const deletedEvent = n.events.find((ev) => ev.endsWith(".deleted"));
 
+  // Signal events (not .created/.updated/.deleted) need update stubs too.
+  // The dispatcher imports a function for every event — missing stubs cause
+  // immediate TypeScript errors after gen, before any TODO is filled.
+  const signalEvents = n.events.filter(
+    (ev) =>
+      !ev.endsWith(".created") &&
+      !ev.endsWith(".updated") &&
+      !ev.endsWith(".deleted"),
+  );
+
+  // "ticket.status-changed" → "StatusChanged" → "applyTicketStatusChanged"
+  function signalFnName(ev: string): string {
+    const action = ev
+      .split(".")
+      .slice(1)
+      .join("-")
+      .split("-")
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join("");
+    return `apply${E}${action}`;
+  }
+
   const updateProjection = updatedEvent
     ? `
 // ── ${updatedEvent} ──────────────────────────────────────────────────────────
@@ -58,6 +80,27 @@ export function apply${E}Deleted(
 `
     : "";
 
+  const signalProjections = signalEvents
+    .map(
+      (ev) => `
+// ── ${ev} ──────────────────────────────────────────────────────────
+export function ${signalFnName(ev)}(
+  payload: AnyPayload,
+  queryClient: QueryClient,
+): void {
+  const ${e}Id = payload.${e}Id as string | undefined;
+  if (!${e}Id) return;
+
+  // TODO: derive context — which collection does this entity belong to?
+  const context = {
+    // e.g. workspaceId: payload.workspaceId as string,
+  };
+
+  applyEntityUpdate("${e}", { id: ${e}Id, ...payload }, context, queryClient);
+}`,
+    )
+    .join("\n");
+
   return `import { QueryClient } from "@tanstack/react-query";
 import {
   applyEntityCreate,
@@ -93,5 +136,5 @@ export function apply${E}Created(
 
   applyEntityCreate("${e}", { id: ${e}Id, ...payload }, context, queryClient);
 }
-${updateProjection}${deleteProjection}`;
+${updateProjection}${deleteProjection}${signalProjections}`;
 }

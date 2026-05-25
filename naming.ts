@@ -28,6 +28,7 @@ export interface DomainNames {
   // ── Room ───────────────────────────────────────────────────────────────────
   roomTemplate: string;
   roomVisibilityField: string | undefined;
+  roomPrivateTemplate: string | undefined;
 
   // ── Backend files (relative to project root) ───────────────────────────────
   apiRouterFile: string; // "apps/api/src/invoice/invoice.router.ts"
@@ -128,6 +129,7 @@ export function deriveNames(
     // Room
     roomTemplate: spec.room.template,
     roomVisibilityField: spec.room.visibilityField,
+    roomPrivateTemplate: spec.room.privateRoomTemplate,
 
     // Backend
     apiRouterFile: `${config.api.srcRoot}/${domainKey}/${domainKey}.router.ts`,

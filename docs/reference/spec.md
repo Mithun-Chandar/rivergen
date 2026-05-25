@@ -14,8 +14,9 @@ The RiverGen spec file is a JSON file that describes one real-time domain. It is
 | `entity.key`           | string      | yes      | `^[a-z][a-zA-Z0-9]*$` (camelCase)                            | Used for TypeScript identifiers, class names, and type names.                                    |
 | `entity.eventPrefix`   | string      | yes      | `^[a-z][a-z0-9-]*$` (kebab-case)                             | The prefix that every event name must start with.                                                |
 | `events`               | string[]    | yes      | min 1 item; each item: `^[a-z][a-z0-9-]*\.[a-z][a-z0-9.-]*$` | Dot-notation only. Colon notation is explicitly rejected.                                        |
-| `room.template`        | string      | yes      | min length 1                                                 | Room name template with `${varName}` placeholders.                                               |
-| `room.visibilityField` | string      | no       | —                                                            | Field name on the entity payload used for PRIVATE room scoping.                                  |
+| `room.template`             | string      | yes      | min length 1                                                 | Room name template with `${varName}` placeholders.                                                                                                                       |
+| `room.visibilityField`      | string      | no       | —                                                            | Field name on the entity payload used for PRIVATE room scoping.                                                                                                          |
+| `room.privateRoomTemplate`  | string      | no       | —                                                            | Room template for PRIVATE entities. Required when `visibilityField` is set — omitting it emits a `TODO_private_room` placeholder in the broadcast helper. Uses the same `${varName}` syntax as `room.template`. |
 
 Validation errors include the field path, for example:
 
@@ -181,16 +182,7 @@ Some entities can be either public or private. When `visibilityField` is set, th
 
 ### What the generator produces
 
-With `"visibilityField": "visibility"` the broadcast helper contains:
-
-```typescript
-const isPrivate = payload.visibility === "PRIVATE";
-if (isPrivate) {
-  // emit to narrow private room
-} else {
-  // emit to workspace room
-}
-```
+With `"visibilityField": "visibility"` the broadcast helper contains an `isPrivate` guard that routes PRIVATE entities to a scoped room and PUBLIC entities to the workspace room. See [`room.privateRoomTemplate`](#roomprivateroomtemplate) for what expression the PRIVATE branch contains.
 
 Without `visibilityField`, no guard is generated and every broadcast goes to the workspace room unconditionally.
 
@@ -202,6 +194,39 @@ Gate 5 inspects broadcast functions at audit time. It fires a warning when:
 - The function emits to a `workspace:` room without a guard that checks the visibility value.
 
 The intent is to prevent private entity data from being broadcast into a public workspace room. Setting `visibilityField` in the spec ensures the generator produces the guard. Omitting it for an entity that can be PRIVATE causes Gate 5 to warn on every audit run until the guard is added manually or `visibilityField` is set and the file is regenerated.
+
+---
+
+## `room.privateRoomTemplate`
+
+### Purpose
+
+When `visibilityField` is set the broadcast helper needs a room for PRIVATE entities. `privateRoomTemplate` provides that room. It uses the same `${varName}` placeholder syntax as `room.template`; the placeholder variable is read from the event payload at broadcast time.
+
+### What the generator produces
+
+With `"visibilityField": "visibility"` and `"privateRoomTemplate": "user:${assigneeId}"`:
+
+```typescript
+const workspaceId = payload.workspaceId as string | undefined;
+if (!workspaceId) { /* drop */ }
+const assigneeId = payload.assigneeId as string | undefined;
+const isPrivate = payload.visibility === "PRIVATE";
+const room = isPrivate
+  ? `user:${assigneeId}`
+  : `workspace:${workspaceId}`;
+```
+
+With `visibilityField` set but `privateRoomTemplate` omitted:
+
+```typescript
+const isPrivate = payload.visibility === "PRIVATE";
+const room = isPrivate
+  ? `TODO_private_room` /* TODO: set room.privateRoomTemplate in your spec, e.g. "user:${assigneeId}" */
+  : `workspace:${workspaceId}`;
+```
+
+Gate 5 checks for a visibility guard structure but does not detect the `TODO_private_room` placeholder — a passing audit does not mean the private branch is correct. Always set `privateRoomTemplate` alongside `visibilityField`.
 
 ---
 
@@ -245,12 +270,13 @@ The intent is to prevent private entity data from being broadcast into a public 
   "events": ["work-order.created", "work-order.updated", "work-order.deleted"],
   "room": {
     "template": "workspace:${workspaceId}",
-    "visibilityField": "visibility"
+    "visibilityField": "visibility",
+    "privateRoomTemplate": "user:${assigneeId}"
   }
 }
 ```
 
-`domain.key` and `entity.eventPrefix` are both `"work-order"` (kebab-case). `entity.key` is `"workOrder"` (camelCase). `visibilityField` is set so the generator emits an `isPrivate` guard in the broadcast helper.
+`domain.key` and `entity.eventPrefix` are both `"work-order"` (kebab-case). `entity.key` is `"workOrder"` (camelCase). `visibilityField` is set so the generator emits an `isPrivate` guard in the broadcast helper. `privateRoomTemplate` tells the generator what room expression to use for the PRIVATE branch — without it a `TODO_private_room` placeholder is emitted instead.
 
 ---
 
@@ -304,7 +330,27 @@ If your entity has a `visibility` field that can be `"PRIVATE"`, omitting `visib
 // if the entity payload can carry visibility: "PRIVATE", set this
 "room": {
   "template": "workspace:${workspaceId}",
+  "visibilityField": "visibility",
+  "privateRoomTemplate": "user:${assigneeId}"
+}
+```
+
+### Omitting `privateRoomTemplate` when `visibilityField` is set
+
+Setting `visibilityField` without `privateRoomTemplate` emits a `TODO_private_room` placeholder in the PRIVATE branch of the broadcast helper. The file compiles and Gate 5 passes (it only verifies the guard structure exists), but PRIVATE entities are routed to a non-existent room and never delivered.
+
+```json
+// wrong — visibilityField set but no privateRoomTemplate
+"room": {
+  "template": "workspace:${workspaceId}",
   "visibilityField": "visibility"
+}
+
+// correct
+"room": {
+  "template": "workspace:${workspaceId}",
+  "visibilityField": "visibility",
+  "privateRoomTemplate": "user:${assigneeId}"
 }
 ```
 

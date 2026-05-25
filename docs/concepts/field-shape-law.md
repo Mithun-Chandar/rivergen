@@ -36,7 +36,7 @@ The `{ id: taskId, ...payload }` object becomes the cached entity. Every field i
 The UI reads cached entities from `useQuery`:
 
 ```typescript
-const { data: tasks } = useTaskList({ projectId });
+const { data: tasks } = useTaskList(projectId);
 // tasks[0].title — reads the "title" field
 ```
 

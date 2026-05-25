@@ -50,9 +50,15 @@ export async function createTask(io: Server, data: CreateTaskInput) {
 **Fix:** Remove the `io.emit` call and use `eventFactory.publish()`:
 
 ```typescript
-export async function createTask(eventFactory: EventFactory, data: CreateTaskInput) {
+export async function createTask(
+  eventFactory: EventFactory,
+  data: CreateTaskInput,
+) {
   const task = await db.task.create({ data });
-  await eventFactory.publish("task.created", { taskId: task.id, projectId: task.projectId });
+  await eventFactory.publish("task.created", {
+    taskId: task.id,
+    projectId: task.projectId,
+  });
   return task;
 }
 ```
@@ -171,7 +177,10 @@ export function applyTaskProjection(
 **Broken code** (`apps/api/src/task/task.broadcast.ts`):
 
 ```typescript
-export function broadcastTaskCreated(io: Server, payload: TaskCreatedPayload): void {
+export function broadcastTaskCreated(
+  io: Server,
+  payload: TaskCreatedPayload,
+): void {
   // wrong: emits to ALL connected sockets, ignoring room scoping
   io.emit("task.created", payload);
 }
@@ -191,7 +200,10 @@ export function broadcastTaskCreated(io: Server, payload: TaskCreatedPayload): v
 **Fix:**
 
 ```typescript
-export function broadcastTaskCreated(io: Server, payload: TaskCreatedPayload): void {
+export function broadcastTaskCreated(
+  io: Server,
+  payload: TaskCreatedPayload,
+): void {
   const room = `project:${payload.projectId}`;
   io.to(room).emit("task.created", payload);
 }
@@ -222,11 +234,13 @@ export function broadcastTaskCreated(io: Server, payload: TaskCreatedPayload): v
 import { z } from "zod";
 
 export const taskSchemas = {
-  "task.created": z.object({
-    taskId: z.string(),
-    projectId: z.string(),
-    title: z.string(),
-  }).strict(),
+  "task.created": z
+    .object({
+      taskId: z.string(),
+      projectId: z.string(),
+      title: z.string(),
+    })
+    .strict(),
 };
 ```
 
@@ -329,13 +343,17 @@ The dispatcher maps `"task.created"` to `applyTaskProjection`, which calls entit
 ```typescript
 useMutation({
   mutationFn: createTask,
-  onMutate: async (data) => { /* optimistic */ },
+  onMutate: async (data) => {
+    /* optimistic */
+  },
   onSuccess: () => {
     // wrong: manually forcing a cache refresh — this competes with the
     // WebSocket projection and creates a duplicate update path
     queryClient.invalidateQueries({ queryKey: ["tasks"] });
   },
-  onError: (_, __, context) => { /* rollback */ },
+  onError: (_, __, context) => {
+    /* rollback */
+  },
 });
 ```
 
@@ -356,8 +374,12 @@ useMutation({
 ```typescript
 useMutation({
   mutationFn: createTask,
-  onMutate: async (data) => { /* stamp optimistic ghost */ },
-  onError: (_, __, context) => { /* roll back ghost */ },
+  onMutate: async (data) => {
+    /* stamp optimistic ghost */
+  },
+  onError: (_, __, context) => {
+    /* roll back ghost */
+  },
   // no onSuccess — the WS event triggers the projection, which updates the cache
 });
 ```
@@ -402,7 +424,11 @@ useMutation({
     const previous = queryClient.getQueryData(["tasks", data.projectId]);
     queryClient.setQueryData(["tasks", data.projectId], (old: Task[]) => [
       ...old,
-      { ...data, id: `temp-task-${Date.now()}`, clientTempId: data.clientTempId },
+      {
+        ...data,
+        id: `temp-task-${Date.now()}`,
+        clientTempId: data.clientTempId,
+      },
     ]);
     return { previous };
   },
@@ -428,11 +454,13 @@ Gate #12 runs four layers of checks. Each layer has its own failure mode.
 
 ```typescript
 export const taskSchemas = {
-  "task.created": z.object({
-    taskId: z.string(),
-    projectId: z.string(),
-    // "title" is absent — .strict() will reject or strip any payload that includes it
-  }).strict(),
+  "task.created": z
+    .object({
+      taskId: z.string(),
+      projectId: z.string(),
+      // "title" is absent — .strict() will reject or strip any payload that includes it
+    })
+    .strict(),
 };
 ```
 
@@ -496,7 +524,7 @@ io.to(`project:${projectId}`).emit("task.created", {
 ```typescript
 io.to(`project:${projectId}`).emit("task.created", {
   taskId: payload.taskId,
-  title: payload.title,   // ← add
+  title: payload.title, // ← add
 });
 ```
 
@@ -548,10 +576,17 @@ export const taskWitness = {
     // Apply projection logic directly, without a static import
     const payload = { taskId: "test-task-001", title: "Test Task" };
     applyEntityCreate(queryClient, ["tasks", "test-project-001"], payload);
-    const cached = (queryClient as any).getQueryData(["tasks", "test-project-001"]);
+    const cached = (queryClient as any).getQueryData([
+      "tasks",
+      "test-project-001",
+    ]);
     const entity = Array.isArray(cached) ? cached[0] : undefined;
     return [
-      { name: "title in cache", ok: entity?.title === "Test Task", detail: `got ${entity?.title}` },
+      {
+        name: "title in cache",
+        ok: entity?.title === "Test Task",
+        detail: `got ${entity?.title}`,
+      },
     ];
   },
 };
@@ -599,7 +634,7 @@ export function applyTaskCreated(
 ): void {
   applyEntityCreate(queryClient, ["tasks", payload.projectId], {
     id: payload.taskId,
-    title: payload.title,   // ← ensure this is forwarded
+    title: payload.title, // ← ensure this is forwarded
     projectId: payload.projectId,
   });
 }
@@ -627,9 +662,9 @@ async lifecycle(queryClient: unknown) {
 
 ## Gates not demonstrated here
 
-| Gate | Why not demonstrated |
-| ---- | -------------------- |
+| Gate                                          | Why not demonstrated                                                                                                                                                                                                                                                  |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **#3** WS socket.on → Dispatcher → Projection | Requires a complete ws-bindings + dispatcher + projection stack. Violations occur when a `socket.on` binding exists but the event name is not routed through `applyRealtimeEventToCache`. The error message names the missing event and the file it should appear in. |
-| **#11** Event Audit Coverage | Requires the three Phase 4/5/6 audit artifact files to exist. When they are absent, Gate #11 skips silently. When present but incomplete, it reports each missing event by name. |
+| **#11** Event Audit Coverage                  | Requires the three Phase 4/5/6 audit artifact files to exist. When they are absent, Gate #11 skips silently. When present but incomplete, it reports each missing event by name.                                                                                      |
 
 For full descriptions of every gate including skip conditions, see [docs/reference/gates.md](../reference/gates.md).

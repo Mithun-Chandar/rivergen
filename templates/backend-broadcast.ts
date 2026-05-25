@@ -16,6 +16,23 @@ export function renderBackendBroadcast(n: DomainNames): string {
   const roomVarMatch = n.roomTemplate.match(/\$\{(\w+)\}/);
   const roomVarName = roomVarMatch ? roomVarMatch[1] : "projectId";
 
+  // Extract private room template variable name (if provided in spec)
+  const privateRoomVarMatch = n.roomPrivateTemplate?.match(/\$\{(\w+)\}/);
+  const privateRoomVarName = privateRoomVarMatch ? privateRoomVarMatch[1] : null;
+
+  // Build the private room expression.
+  // Use string concatenation (not template literal) to avoid escaping confusion:
+  // the goal is to produce the literal characters `user:${assigneeId}` in the output file.
+  const privateRoomExpr = n.roomPrivateTemplate
+    ? '`' + n.roomPrivateTemplate + '`'
+    : '`TODO_private_room` /* TODO: set room.privateRoomTemplate in your spec, e.g. "user:${assigneeId}" */';
+
+  // Declare the private room variable when it differs from the public room variable
+  const privateVarDecl =
+    privateRoomVarName && privateRoomVarName !== roomVarName
+      ? `\n  const ${privateRoomVarName} = payload.${privateRoomVarName} as string | undefined;`
+      : '';
+
   // Build the room resolution block
   const roomBlock = visField
     ? `
@@ -25,10 +42,10 @@ export function renderBackendBroadcast(n: DomainNames): string {
   if (!${roomVarName}) {
     console.warn(\`[broadcast:${d}] \${eventName} dropped — no ${roomVarName} in payload\`);
     return;
-  }
+  }${privateVarDecl}
   const isPrivate = payload.${visField} === "PRIVATE";
   const room = isPrivate
-    ? \`${n.roomTemplate.replace(`\${${roomVarName}}`, `\${${roomVarName}}`)}\`  // scoped room for private entities
+    ? ${privateRoomExpr}
     : \`${n.roomTemplate.replace(`\${${roomVarName}}`, `\${${roomVarName}}`)}\`;
 `
     : `

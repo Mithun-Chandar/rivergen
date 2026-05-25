@@ -28,6 +28,13 @@ const roomSchema = z.object({
    * e.g. "visibility" — check payload.visibility === "PRIVATE"
    */
   visibilityField: z.string().optional(),
+  /**
+   * Optional: room template for PRIVATE entities.
+   * Required when visibilityField is set — without it the generator emits a TODO.
+   * Uses the same ${varName} syntax as room.template.
+   * e.g. "user:${assigneeId}" — PRIVATE entities go to the assignee's personal room.
+   */
+  privateRoomTemplate: z.string().optional(),
 });
 
 // ─── Main spec ─────────────────────────────────────────────────────────────────

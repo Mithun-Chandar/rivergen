@@ -42,7 +42,7 @@ export function renderFrontendHook(n: DomainNames): string {
   const updateMutation = updatedEvent
     ? `
 // ── useUpdate${E} ──────────────────────────────────────────────────────────────
-export function useUpdate${E}() {
+export function useUpdate${E}(${roomParams}) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -53,7 +53,7 @@ export function useUpdate${E}() {
       data: Partial<${E}Input>;
     }) => {
       // TODO: replace with real API call
-      const res = await fetch(\`/api/\${d}/\${id}\`, {
+      const res = await fetch(\`/api/${d}/\${id}\`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -88,12 +88,12 @@ export function useUpdate${E}() {
   const deleteMutation = deletedEvent
     ? `
 // ── useDelete${E} ──────────────────────────────────────────────────────────────
-export function useDelete${E}() {
+export function useDelete${E}(${roomParams}) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       // TODO: replace with real API call
-      const res = await fetch(\`/api/\${d}/\${id}\`, { method: "DELETE" });
+      const res = await fetch(\`/api/${d}/\${id}\`, { method: "DELETE" });
       if (!res.ok) throw new Error(await res.text());
     },
     onMutate: async (id) => {
@@ -189,7 +189,7 @@ export function use${E}(
 }
 
 // ── useCreate${E} ──────────────────────────────────────────────────────────────
-export function useCreate${E}() {
+export function useCreate${E}(${roomParams}) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: ${E}Input) => {

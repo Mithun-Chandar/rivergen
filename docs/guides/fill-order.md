@@ -10,7 +10,7 @@ The canonical fill order is:
 a. mutations.ts            → Zod input schema + DB call + eventFactory.publish() payload
 b. schemas/<domain>.ts     → add fields BEFORE adding them to eventFactory.publish()
 c. <domain>.listener.ts    → wire eventBus.subscribe() → broadcastX()
-d. use-<domain>.ts         → add query key context in onMutate
+d. use-<domain>.ts         → fill API call URLs (onMutate key is generated)
 e. <domain>-projections.ts → add list key context in applyEntity*()
 f. <domain>.witness.ts     → fill payload type, requiredFields, testPayloads, lifecycle(), signals{}
 ```
@@ -107,31 +107,36 @@ In most cases you do not need to change this file at all. Situations where you m
 - The domain has events with different broadcast patterns (some events go to a different room)
 - You need to filter events before broadcasting (e.g. only broadcast to admins)
 
-If the room template uses a visibility field, the generated `broadcastTaskEvent` already includes the `isPrivate` guard — but the two room strings in the guard are placeholder stubs you must fill in:
+If the room template uses a visibility field, the generated `broadcastTaskEvent` already includes the `isPrivate` guard. When `privateRoomTemplate` is set in the spec the private room expression is generated correctly — no fill required. When `privateRoomTemplate` is omitted, the private branch contains a `TODO_private_room` placeholder you must replace:
 
 ```typescript
 const isPrivate = payload.visibility === "PRIVATE";
 const room = isPrivate
-  ? `user:${userId}` // TODO: fill in scoped room for private entities
+  ? `TODO_private_room` // set room.privateRoomTemplate in your spec, or fill this manually
   : `workspace:${workspaceId}`;
 ```
 
 ---
 
-## d. use-<domain>.ts — add query key context in onMutate
+## d. use-<domain>.ts — fill API call URLs
 
-**Why fourth (after listener):** The hook's `onMutate` writes the optimistic ghost to the cache using the list key. This list key must match what the entity-projection slice will use in step (e). Getting the key right before filling the projection avoids having to change both files.
+**Why fourth (after listener):** The hook stubs have placeholder `fetch("/api/${d}")` calls. Everything else — the `onMutate` list key, ghost stamping, and rollback — is generated correctly from the room template.
 
-The key decision is which context variables the list key needs. These come from the room template:
+The `onMutate` list key is derived from the room template at generation time:
 
 ```typescript
 // Room template: "project:${projectId}"
-// → list key must include projectId
-
+// → generated onMutate already contains:
 const listKey = taskKeys.list({ projectId });
 ```
 
-If the room template is `workspace:${workspaceId}`, the list key uses `workspaceId`. The shape must be consistent across: the query key factory, the hook's `onMutate`, and the entity-projection slice.
+The mutation hooks also accept `projectId` as a parameter (derived from the room template), so call sites look like:
+
+```typescript
+const createTask = useCreateTask(projectId);
+```
+
+The only fill required in this file is replacing the `fetch` URL placeholders with your real API paths. Do not change the `onMutate` key shape unless your query key structure genuinely differs from the generated default.
 
 The generated hook also has a `// TODO` comment on the `Array.isArray(prev)` guard:
 
@@ -167,12 +172,18 @@ export function applyTaskCreated(
 }
 ```
 
-`context.projectId` is how the entity-cache knows which list keys to write. The entity-projection slice (`packages/shared/src/entity-projections/task.ts`) must use the same key shape in `onCreate.required`:
+Fill `context` with the room variable from the payload — `projectId` for a `project:${projectId}` template, `workspaceId` for `workspace:${workspaceId}`, and so on. This is the only TODO in the projection file.
+
+The entity-projection slice (`packages/shared/src/entity-projections/task.ts`) is generated with a room-var-aware key factory that already matches this context shape — in most cases it requires no edits:
 
 ```typescript
 onCreate: {
   required: [
-    (entity, context) => ["tasks", "list", (context as { projectId: string }).projectId],
+    (_entity, context) => [
+      "tasks",
+      "list",
+      ((context as Record<string, unknown>)?.projectId as string) ?? "",
+    ],
   ],
   invalidate: [],
 },

@@ -84,6 +84,7 @@ Create a JSON spec file describing the domain. Specs live in `specs/` by convent
 - `events[]` — dot notation only (`entity.action`); colons are rejected
 - `room.template` — uses `${varName}` placeholders; these become function parameters in broadcast helpers and context fields in query key factories
 - `room.visibilityField` — add this if the entity can be `PRIVATE`; omitting it for a private entity broadcasts private data to public rooms
+- `room.privateRoomTemplate` — required when `visibilityField` is set; defines the room PRIVATE entities are sent to (e.g. `"user:${assigneeId}"`); omitting it emits a `TODO_private_room` placeholder in the broadcast helper
 
 For multi-word domains, the key pair `"domain.key": "work-order"` / `"entity.key": "workOrder"` is the standard pattern.
 
@@ -156,7 +157,7 @@ This writes the 12 domain files listed in the plan and regenerates the 5 barrel 
 | `task.listener.ts`                   | Backend  | `eventBus.subscribe("task.*", broadcastTaskEvent)` wiring              |
 | `task.ts` (schemas slice)            | Backend  | `.strict()` Zod schema for the `task.*` event payload                  |
 | `task-projections.ts`                | Frontend | `applyTaskCreated/Updated/Deleted` functions                           |
-| `use-task.ts`                        | Frontend | `useTaskList`, `useCreateTask`, `useUpdateTask`, `useDeleteTask` hooks |
+| `use-task.ts`                        | Frontend | `useTaskList(projectId)`, `useCreateTask(projectId)`, `useUpdateTask(projectId)`, `useDeleteTask(projectId)` hooks — room variable from spec |
 | `task.ts` (domain-dispatchers slice) | Frontend | `{ "task.created": applyTaskCreated, ... }` map                        |
 | `task.ts` (ws-bindings slice)        | Frontend | `getTaskWsBindings()` for socket event subscriptions                   |
 | `task.ts` (entity-projections slice) | Shared   | `EntityProjectionEntry` for cache key routing                          |
@@ -210,20 +211,24 @@ export const taskCreatedSchema = z
 
 **c. `task.listener.ts`** — wire the `eventBus.subscribe()` call to the broadcast helper. The generated stub already has the correct structure; you may not need to change this file at all.
 
-**d. `use-task.ts`** — check the query key used in `onMutate`. The generated stub reads:
+**d. `use-task.ts`** — mutation hooks accept room scope parameters derived from the spec's `room.template`. For `"project:${projectId}"` every mutation hook requires `projectId` as its first argument:
 
 ```typescript
-const listKey = taskKeys.list({ projectId });
+const createTask = useCreateTask(projectId);
+const updateTask = useUpdateTask(projectId);
+const deleteTask = useDeleteTask(projectId);
 ```
 
-If your room template is `project:${projectId}`, this is already correct — no change needed. If your template uses a different variable (e.g. `workspace:${workspaceId}`), update the context object to match: `taskKeys.list({ workspaceId })`. The key here and the key in step (e) must be identical — a mismatch means WS updates write to a key the hook is not watching and will never appear in the UI.
+Pass the room variable from your component's route context (e.g. from a URL param or React context). The generated `onMutate` already uses `taskKeys.list({ projectId })` — no edit needed unless the room variable name differs from what the component provides.
 
-**e. `task-projections.ts`** — add the room context to `applyTaskCreated/Updated/Deleted`. The list key here must match the list key in the hook's `onMutate`:
+**e. `task-projections.ts`** — add the room context to `applyTaskCreated/Updated/Deleted`. The generated stub contains a `// TODO` placeholder for the context object; fill it with the room variable from the payload:
 
 ```typescript
 const context = { projectId: payload.projectId as string };
 applyEntityCreate("task", { id: taskId, ...payload }, context, queryClient);
 ```
+
+The entity-projection slice (`entity-projections/task.ts`) is generated with a room-var-aware key factory that already matches this context shape — in most cases it needs no edits.
 
 **f. `task.witness.ts`** — fill the field continuity contract.
 

@@ -134,7 +134,12 @@ export function renderWitnessFile(n: DomainNames): string {
 //       Field names here MUST match the REST API response shape exactly — the
 //       same names the UI reads from useQuery data. A mismatch means the WS
 //       projection writes a field the UI never reads, causing silent data loss.
-//       Every field in requiredFields[] MUST appear here.
+//
+// TYPING RULE: testPayloads must satisfy this full type for every event.
+//   Fields present on ALL events  → required  (e.g. ${e}Id: string)
+//   Fields present on SOME events → optional  (e.g. clientTempId?: string | null)
+//   This lets each testPayload omit fields that particular event doesn't carry.
+//   Example: if .deleted only sends ${e}Id, mark title/status/etc as optional here.
 export interface ${E}Payload {
   ${e}Id: string;
   // TODO: add remaining fields (copy from the API response type, not the DB model)

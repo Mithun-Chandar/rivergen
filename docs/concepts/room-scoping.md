@@ -15,8 +15,9 @@ The spec's `room.template` field defines the socket.io room pattern:
 ```json
 {
   "room": {
-    "template": "project:${projectId}",
-    "visibilityField": "visibility"
+    "template": "workspace:${workspaceId}",
+    "visibilityField": "visibility",
+    "privateRoomTemplate": "user:${assigneeId}"
   }
 }
 ```
@@ -38,7 +39,9 @@ The room is resolved at broadcast time from the event payload. If the payload do
 
 ## The visibility field
 
-When `room.visibilityField` is set, the generated broadcast helper adds a PRIVATE entity guard:
+When `room.visibilityField` is set, the generated broadcast helper adds a PRIVATE entity guard. The private room expression comes from `room.privateRoomTemplate` in the spec.
+
+**With `privateRoomTemplate: "user:${assigneeId}"`:**
 
 ```typescript
 export function broadcastTicketEvent(
@@ -51,15 +54,29 @@ export function broadcastTicketEvent(
     console.warn(`[broadcast:ticket] ${eventName} dropped — no workspaceId in payload`);
     return;
   }
+  const assigneeId = payload.assigneeId as string | undefined;
   const isPrivate = payload.visibility === "PRIVATE";
   const room = isPrivate
-    ? `workspace:${workspaceId}`  // scoped room for private entities
-    : `workspace:${workspaceId}`; // TODO: fill in different room if needed
+    ? `user:${assigneeId}`
+    : `workspace:${workspaceId}`;
+  io.to(room).emit(eventName, payload);
+}
 ```
 
-The generated stub includes two identical room strings as a placeholder — you fill in the correct scoped room for private entities (e.g. `user:${userId}` or `team:${teamId}`) vs the default room.
+The private room variable (`assigneeId`) is declared automatically when it differs from the public room variable. No manual edits needed when `privateRoomTemplate` is set.
 
-When `visibilityField` is omitted from the spec, the broadcast generates a simpler helper with no visibility guard.
+**With `visibilityField` set but `privateRoomTemplate` omitted:**
+
+```typescript
+  const isPrivate = payload.visibility === "PRIVATE";
+  const room = isPrivate
+    ? `TODO_private_room` /* TODO: set room.privateRoomTemplate in your spec, e.g. "user:${assigneeId}" */
+    : `workspace:${workspaceId}`;
+```
+
+Gate 5 passes (it only checks for a guard structure), but PRIVATE entities are broadcast to a non-existent room. Always set `privateRoomTemplate` alongside `visibilityField`.
+
+When `visibilityField` is omitted from the spec, the broadcast generates a simpler helper with no visibility guard — all events go to the public room unconditionally.
 
 ---
 
@@ -163,5 +180,5 @@ A single domain can only have one room template. If an entity needs different br
 ## Related
 
 - [docs/concepts/one-river.md](one-river.md) — where room scoping fits in the full pipeline
-- [docs/reference/spec.md](../reference/spec.md) — `room.template` and `room.visibilityField` reference
+- [docs/reference/spec.md](../reference/spec.md) — `room.template`, `room.visibilityField`, and `room.privateRoomTemplate` reference
 - [docs/reference/gates.md](../reference/gates.md) — Gate #5 full reference with failure examples

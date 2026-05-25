@@ -12,11 +12,20 @@ export function renderBackendRouter(n: DomainNames): string {
   const e = n.entityKey;
   const d = n.domainKey;
 
+  const hasUpdated = n.events.some((ev) => ev.endsWith(".updated"));
+  const hasDeleted = n.events.some((ev) => ev.endsWith(".deleted"));
+
+  // Only import mutation functions that are actually generated (mutations.ts
+  // only generates update/delete blocks when those events exist in the spec)
+  const mutationImports = [
+    `  create${E}`,
+    ...(hasUpdated ? [`  update${E}`] : []),
+    ...(hasDeleted ? [`  delete${E}`] : []),
+  ].join(",\n");
+
   return `import { Router, type Request, type Response } from "express";
 import {
-  create${E},
-  update${E},
-  delete${E},
+${mutationImports},
 } from "./${d}.mutations";
 
 // TODO: import your auth/permission middleware
@@ -45,18 +54,17 @@ ${e}Router.post("/", async (req: Request, res: Response) => {
   res.status(201).json(result);
 });
 
-// ── PATCH /:id (update) ───────────────────────────────────────────────────────
+${hasUpdated ? `// ── PATCH /:id (update) ───────────────────────────────────────────────────────
 ${e}Router.patch("/:id", async (req: Request, res: Response) => {
   // TODO: requirePermission(req, "${d}:update")
   const result = await update${E}(req.params.id, req.body, req);
   res.json(result);
 });
-
-// ── DELETE /:id ───────────────────────────────────────────────────────────────
+` : ""}${hasDeleted ? `// ── DELETE /:id ───────────────────────────────────────────────────────────────
 ${e}Router.delete("/:id", async (req: Request, res: Response) => {
   // TODO: requirePermission(req, "${d}:delete")
   await delete${E}(req.params.id, req);
   res.status(204).end();
 });
-`;
+` : ""}`;
 }

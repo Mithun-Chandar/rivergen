@@ -55,18 +55,30 @@ Steps internally:
 
 ## The EntityProjectionEntry structure
 
-Each domain's `entity-projections/<domain>.ts` slice registers its entities in `ENTITY_PROJECTIONS`. The generated entry:
+Each domain's `entity-projections/<domain>.ts` slice registers its entities in `ENTITY_PROJECTIONS`. For a domain with `room.template: "project:${projectId}"` the generated entry is:
 
 ```typescript
 export const taskProjections: Record<string, EntityProjectionEntry> = {
   task: {
     ownedKeyFactories: ["taskKeys"],
     onCreate: {
-      required: [() => ["tasks"]], // TODO: fill with correct key factory
+      required: [
+        (_entity, context) => [
+          "tasks",
+          "list",
+          ((context as Record<string, unknown>)?.projectId as string) ?? "",
+        ],
+      ],
       invalidate: [],
     },
     onUpdate: {
-      required: [() => ["tasks"]],
+      required: [
+        (_entity, context) => [
+          "tasks",
+          "list",
+          ((context as Record<string, unknown>)?.projectId as string) ?? "",
+        ],
+      ],
       invalidate: [],
     },
     onDelete: {
@@ -76,32 +88,23 @@ export const taskProjections: Record<string, EntityProjectionEntry> = {
 };
 ```
 
+The room variable (`projectId`) is extracted from the spec's `room.template` at generation time — the generated factory already matches the key shape the hook's `onMutate` produces. In most cases this file requires no developer edits.
+
 **What each field means:**
 
 `ownedKeyFactories` — string array naming the query key factory objects this entity is associated with. Currently informational — used for documentation and future tooling.
 
-`onCreate.required` — array of key-factory functions. Each function receives `(entity, context)` and returns a query key (or array of query keys). Entity-cache calls each factory and uses `setQueriesData` with a prefix predicate to update all matching cache entries. If no matching query exists, entity-cache creates it.
+`onCreate.required` — array of key-factory functions. Each function receives `(entity, context)` and returns a query key. Entity-cache calls each factory and uses `setQueriesData` with a prefix predicate to update all matching cache entries. If no matching query exists, entity-cache creates it.
 
-`onCreate.invalidate` — array of key-factory functions. Called after `required` writes are done. Each function returns a query key, which is passed to `invalidateQueries()`. Use this for list queries that should refetch from the server after a create (e.g. a paginated list that cannot be correctly updated by upsert alone).
+`onCreate.invalidate` — array of key-factory functions. Called after `required` writes are done. Each returns a query key passed to `invalidateQueries()`. Use for paginated lists that must refetch rather than be updated by upsert.
 
 `onUpdate.required` and `onUpdate.invalidate` — same pattern as `onCreate` for update events.
 
-`onDelete.invalidate` — array of raw query keys (not factory functions). Passed directly to `invalidateQueries()`. The `applyEntityDelete` function also removes the entity from all `{ type: "active" }` queries globally, so this field is for additional specific invalidations.
+`onDelete.invalidate` — array of raw query keys passed directly to `invalidateQueries()`. `applyEntityDelete` also removes the entity from all `{ type: "active" }` queries globally, so this field is for additional specific invalidations.
 
-**How to fill it correctly:**
+**When to edit the generated entry:**
 
-The `required` key-factories must return a key that matches what `taskKeys.list(ctx)` returns in the hook's `onMutate`. If the hook watches `["tasks", "list", "proj-001"]`, the factory must return `["tasks", "list", "proj-001"]` or a prefix of it.
-
-Entity-cache uses prefix matching: a factory returning `["tasks", "list"]` will match `["tasks", "list", "proj-001"]` and `["tasks", "list", "proj-002"]` — updating all project lists simultaneously. A factory returning `["tasks"]` will match every key starting with `"tasks"`.
-
-If your list key includes a context variable (e.g. `projectId`), your key factory must also receive it through `context`:
-
-```typescript
-onCreate: {
-  required: [(entity, context) => ["tasks", "list", (context as { projectId: string }).projectId]],
-  invalidate: [],
-},
-```
+Entity-cache uses prefix matching: a factory returning `["tasks", "list"]` matches `["tasks", "list", "proj-001"]` and `["tasks", "list", "proj-002"]` — updating all project lists. If your list key structure differs from the generated default (e.g. a nested key with additional segments), update the `required` factory to match.
 
 ---
 

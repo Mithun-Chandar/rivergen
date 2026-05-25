@@ -28,11 +28,11 @@ This page documents every file that RiverGen writes, who owns it after generatio
 | `entity-projections/_index.ts`    | `gen` (barrel) | Nothing — always overwritten                                     | —                 |
 | `<domain>.router.ts`              | `gen` (domain) | Auth middleware, if needed                                       | —                 |
 | `<domain>.mutations.ts`           | `gen` (domain) | DB call, input validation, full payload                          | Gate #1           |
-| `<domain>.broadcast.ts`           | `gen` (domain) | Private room branch (visibilityField domains)                    | Gate #5           |
+| `<domain>.broadcast.ts`           | `gen` (domain) | Nothing when `privateRoomTemplate` is set; private room expression if omitted | Gate #5 |
 | `<domain>.listener.ts`            | `gen` (domain) | Nothing — complete as generated                                  | Gate #2           |
 | `schemas/<domain>.ts`             | `gen` (domain) | All payload fields beyond `entityId`                             | Gate #7, Gate #12 |
 | `<domain>-projections.ts`         | `gen` (domain) | Context object (projectId, workspaceId, etc.)                    | Gate #4           |
-| `use-<domain>.ts`                 | `gen` (domain) | API call URLs, onMutate context if non-default                   | Gate #9, Gate #10 |
+| `use-<domain>.ts`                 | `gen` (domain) | API call URLs, entity types                                      | Gate #9, Gate #10 |
 | `domain-dispatchers/<domain>.ts`  | `gen` (domain) | Nothing — complete as generated                                  | Gate #3           |
 | `ws-bindings/<domain>.ts`         | `gen` (domain) | Nothing — complete as generated                                  | —                 |
 | `entity-projections/<domain>.ts`  | `gen` (domain) | Correct key factories matching onMutate list key shape           | —                 |
@@ -143,7 +143,11 @@ Gate #1 scans this file to verify that `eventFactory.publish()` is called for ev
 
 **Path:** `apps/api/src/task/task.broadcast.ts`
 
-socket.io emit helper. RiverGen extracts room resolution logic from the domain's room template variables and writes a `broadcastTaskEvent()` function per event plus a central routing function. For simple room configurations the file requires no changes. For domains with a `visibilityField`, developers fill the private room branch with the correct visibility logic.
+socket.io emit helper. RiverGen extracts room resolution logic from the domain's room template variables and writes a single routing function that resolves the room from the payload and calls `io.to(room).emit()`.
+
+For domains with `visibilityField` **and** `privateRoomTemplate` set, the generator produces a complete `isPrivate` guard with the correct private room expression — no developer editing required. If `visibilityField` is set but `privateRoomTemplate` is omitted, the PRIVATE branch contains a `TODO_private_room` placeholder that must be replaced manually (or by adding `privateRoomTemplate` to the spec and re-running `gen --force`).
+
+For simple room configurations (no `visibilityField`) the file requires no changes after generation.
 
 Gate #5 scans this file to verify room scoping is present and no event is broadcast to a catch-all room.
 
@@ -173,7 +177,9 @@ Gate #7 enforces that every schema entry uses `.strict()`. Gate #12 (Layer 1) va
 
 **Path:** `apps/web/src/lib/projections/task-projections.ts`
 
-Frontend projection functions: `applyTaskCreated`, `applyTaskUpdated`, `applyTaskDeleted`. Each function calls the corresponding `applyEntityCreate`, `applyEntityUpdate`, or `applyEntityDelete` from `entity-cache` with a context object. RiverGen writes the function stubs with a `// TODO` context placeholder. Developers fill the context object with the correct cache key shape — `projectId`, `workspaceId`, or whatever fields the hook's `onMutate` list key uses.
+Frontend projection functions. For CRUD events RiverGen writes `applyTaskCreated`, `applyTaskUpdated`, and `applyTaskDeleted`, each calling the corresponding `applyEntityCreate`, `applyEntityUpdate`, or `applyEntityDelete` from `entity-cache`. For signal events (events not ending in `.created`, `.updated`, or `.deleted` — e.g. `task.assigned`, `task.status-changed`) RiverGen also writes `applyTaskAssigned`, `applyTaskStatusChanged`, and so on — one stub per signal event.
+
+All stubs contain a `// TODO` context placeholder. Developers fill the context object with the correct room-scope fields (e.g. `{ projectId: payload.projectId as string }`) so the projection writes to the same cache key the hook is watching.
 
 Gate #4 scans this file to verify that cache writes go through the `applyEntity*` helpers and not direct `queryClient.setQueryData` calls.
 
@@ -189,7 +195,18 @@ React Query hooks: `useTaskList`, `useCreateTask`, `useUpdateTask`, `useDeleteTa
 - `onError` with rollback
 - `onSuccess` intentionally omitted (the system relies on real-time events for cache reconciliation, not HTTP response data)
 
-Developers fill the API call URLs and, if the `onMutate` context derivation is non-default, adjust the list key shape.
+**Hook signatures include room scope parameters** derived from the spec's `room.template`. For `"project:${projectId}"` the mutation and list hooks all require `projectId: string` as their first argument:
+
+```typescript
+useTaskList(projectId: string, options?)
+useCreateTask(projectId: string)
+useUpdateTask(projectId: string)
+useDeleteTask(projectId: string)
+```
+
+The room params are forwarded to `taskKeys.list({ projectId })` inside `onMutate` so the optimistic update writes to the correct scoped cache entry. Call sites pass the room variable from their component's route context.
+
+Developers fill the API call URLs. The `onMutate` list key shape is generated correctly and rarely needs editing — if the room template uses a different variable (e.g. `workspaceId`) the generated key already reflects it.
 
 Gate #9 scans this file for the presence of `onMutate` on every mutation hook. Gate #10 scans for the absence of `onSuccess` (the ban on `onSuccess` for entity mutations is a hard rule).
 
@@ -217,7 +234,9 @@ Exports `getTaskWsBindings()` returning the array of event name strings for this
 
 **Path:** `packages/shared/src/entity-projections/task.ts`
 
-`EntityProjectionEntry` map for cache key routing — tells the projection system which query key factory to use when locating the entity list in the cache. RiverGen writes a stub with a placeholder key factory. Developers fill the correct key factories, which must match the shape used in the hook's `onMutate` list key.
+`EntityProjectionEntry` map for cache key routing — tells `applyEntityCreate/Update` which query key factory to use when locating the entity list in the cache. RiverGen generates a room-var-aware key factory automatically from the spec's `room.template`: for `"project:${projectId}"` the generated `onCreate.required` entry reads the `projectId` from the projection context, producing `["tasks", "list", projectId]`.
+
+This key shape is designed to match the hook's `onMutate` list key exactly. In most cases no developer edits are needed. If the entity's query key structure differs from the generated default (e.g. a nested key with additional segments), update the `required` factory to match.
 
 ---
 

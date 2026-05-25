@@ -9,6 +9,14 @@
  */
 export function renderEntityCache(sharedPackage = "@rivergen/shared"): string {
   return `import { QueryClient } from "@tanstack/react-query";
+// Setup: "${sharedPackage}" must export ENTITY_PROJECTIONS from
+// packages/shared/src/entity-projections/_index.ts
+//
+// In a pnpm workspace, ensure packages/shared/package.json has:
+//   { "name": "${sharedPackage}", "exports": { ".": "./src/entity-projections/_index.ts" } }
+// and that packages/shared is a workspace member (pnpm-workspace.yaml or root package.json).
+//
+// To use a different package name set "sharedPackage" in rivergen.config.json.
 import { ENTITY_PROJECTIONS, type EntityProjectionEntry, type QueryKey } from "${sharedPackage}";
 
 type CacheEntity = {
