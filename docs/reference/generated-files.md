@@ -10,34 +10,34 @@ This page documents every file that RiverGen writes, who owns it after generatio
 
 ## Generated vs User-Owned Boundary
 
-| File                              | Written by     | Developer fills                                                  | Gate(s)           |
-| --------------------------------- | -------------- | ---------------------------------------------------------------- | ----------------- |
-| `event-factory.service.ts`        | `init` (once)  | Nothing — do not modify                                          | —                 |
-| `event-bus.service.ts`            | `init` (once)  | Nothing — do not modify                                          | —                 |
-| `schemas/_base.ts`                | `init` (once)  | Nothing — do not modify                                          | —                 |
-| `entity-cache.ts`                 | `init` (once)  | Nothing — do not modify                                          | Gate #4           |
-| `state-cache.ts`                  | `init` (once)  | Nothing — do not modify                                          | —                 |
-| `WebSocketProvider.tsx`           | `init` (once)  | Nothing — do not modify                                          | Gate #8           |
-| `entity-projections/_types.ts`    | `init` (once)  | Nothing — do not modify                                          | —                 |
-| Vite proxy shims (`index.ts` × 3) | `init` (once)  | Nothing — do not modify                                          | —                 |
-| `AGENTS.md` / `CLAUDE.md`         | `init` (once)  | Nothing — do not modify                                          | —                 |
-| `schemas/_index.ts`               | `gen` (barrel) | Nothing — always overwritten                                     | —                 |
-| `domain-dispatchers/_index.ts`    | `gen` (barrel) | Nothing — always overwritten                                     | —                 |
-| `ws-bindings/_index.ts`           | `gen` (barrel) | Nothing — always overwritten                                     | —                 |
-| `query-keys/_index.ts`            | `gen` (barrel) | Nothing — always overwritten                                     | —                 |
-| `entity-projections/_index.ts`    | `gen` (barrel) | Nothing — always overwritten                                     | —                 |
-| `<domain>.router.ts`              | `gen` (domain) | Auth middleware, if needed                                       | —                 |
-| `<domain>.mutations.ts`           | `gen` (domain) | DB call, input validation, full payload                          | Gate #1           |
-| `<domain>.broadcast.ts`           | `gen` (domain) | Nothing when `privateRoomTemplate` is set; private room expression if omitted | Gate #5 |
-| `<domain>.listener.ts`            | `gen` (domain) | Nothing — complete as generated                                  | Gate #2           |
-| `schemas/<domain>.ts`             | `gen` (domain) | All payload fields beyond `entityId`                             | Gate #7, Gate #12 |
-| `<domain>-projections.ts`         | `gen` (domain) | Context object (projectId, workspaceId, etc.)                    | Gate #4           |
-| `use-<domain>.ts`                 | `gen` (domain) | API call URLs, entity types                                      | Gate #9, Gate #10 |
-| `domain-dispatchers/<domain>.ts`  | `gen` (domain) | Nothing — complete as generated                                  | Gate #3           |
-| `ws-bindings/<domain>.ts`         | `gen` (domain) | Nothing — complete as generated                                  | —                 |
-| `entity-projections/<domain>.ts`  | `gen` (domain) | Correct key factories matching onMutate list key shape           | —                 |
-| `query-keys/<domain>.ts`          | `gen` (domain) | Rarely — generated correctly in most cases                       | —                 |
-| `<domain>.witness.ts`             | `gen` (domain) | TaskPayload interface, requiredFields, testPayloads, lifecycle() | Gate #12          |
+| File                              | Written by     | Developer fills                                                               | Gate(s)           |
+| --------------------------------- | -------------- | ----------------------------------------------------------------------------- | ----------------- |
+| `event-factory.service.ts`        | `init` (once)  | Nothing — do not modify                                                       | —                 |
+| `event-bus.service.ts`            | `init` (once)  | Nothing — do not modify                                                       | —                 |
+| `schemas/_base.ts`                | `init` (once)  | Nothing — do not modify                                                       | —                 |
+| `entity-cache.ts`                 | `init` (once)  | Nothing — do not modify                                                       | Gate #4           |
+| `state-cache.ts`                  | `init` (once)  | Nothing — do not modify                                                       | —                 |
+| `WebSocketProvider.tsx`           | `init` (once)  | Nothing — do not modify                                                       | Gate #8           |
+| `entity-projections/_types.ts`    | `init` (once)  | Nothing — do not modify                                                       | —                 |
+| Vite proxy shims (`index.ts` × 3) | `init` (once)  | Nothing — do not modify                                                       | —                 |
+| `AGENTS.md` / `CLAUDE.md`         | `init` (once)  | Nothing — do not modify                                                       | —                 |
+| `schemas/_index.ts`               | `gen` (barrel) | Nothing — always overwritten                                                  | —                 |
+| `domain-dispatchers/_index.ts`    | `gen` (barrel) | Nothing — always overwritten                                                  | —                 |
+| `ws-bindings/_index.ts`           | `gen` (barrel) | Nothing — always overwritten                                                  | —                 |
+| `query-keys/_index.ts`            | `gen` (barrel) | Nothing — always overwritten                                                  | —                 |
+| `entity-projections/_index.ts`    | `gen` (barrel) | Nothing — always overwritten                                                  | —                 |
+| `<domain>.router.ts`              | `gen` (domain) | Auth middleware, if needed                                                    | —                 |
+| `<domain>.mutations.ts`           | `gen` (domain) | DB call, input validation, full payload                                       | Gate #1           |
+| `<domain>.broadcast.ts`           | `gen` (domain) | Nothing when `privateRoomTemplate` is set; private room expression if omitted | Gate #5           |
+| `<domain>.listener.ts`            | `gen` (domain) | Nothing — complete as generated                                               | Gate #2           |
+| `schemas/<domain>.ts`             | `gen` (domain) | All payload fields beyond `entityId`                                          | Gate #7, Gate #12 |
+| `<domain>-projections.ts`         | `gen` (domain) | Context object (projectId, workspaceId, etc.)                                 | Gate #4           |
+| `use-<domain>.ts`                 | `gen` (domain) | API call URLs, entity types                                                   | Gate #9, Gate #10 |
+| `domain-dispatchers/<domain>.ts`  | `gen` (domain) | Nothing — complete as generated                                               | Gate #3           |
+| `ws-bindings/<domain>.ts`         | `gen` (domain) | Nothing — complete as generated                                               | —                 |
+| `entity-projections/<domain>.ts`  | `gen` (domain) | Correct key factories matching onMutate list key shape                        | —                 |
+| `query-keys/<domain>.ts`          | `gen` (domain) | Rarely — generated correctly in most cases                                    | —                 |
+| `<domain>.witness.ts`             | `gen` (domain) | TaskPayload interface, requiredFields, testPayloads, lifecycle()              | Gate #12          |
 
 ---
 

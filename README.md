@@ -78,7 +78,7 @@ rivergen gen specs/task.json    # write 12 domain files + regenerate barrels
 rivergen verify                 # run all 12 gates
 ```
 
-One spec. One command. Twelve files, all wired:
+`rivergen gen` — one spec, twelve domain files, all wired:
 
 ```mermaid
 flowchart LR

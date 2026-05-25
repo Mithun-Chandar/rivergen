@@ -70,6 +70,8 @@ const GATE_NAME = "Gate #3: WS socket.on → Dispatcher → Projection call";
  *     file (or dispatcher slice) must export that function, or call individual apply*Created/
  *     Updated/Deleted functions directly. If this delegation pattern changes, update the
  *     apply\w+Projection regex above.
+ *   ⚠ ANNOTATION: add `// gate3:delegate-dispatcher` at the top of a slice file to exempt it
+ *     from the inline apply* check. Use when wrapper functions (e.g. tracing) wrap the calls.
  *
  * @templateRef templates/frontend-projection.ts
  *   Template output: apply${E}Created, apply${E}Updated, apply${E}Deleted functions
@@ -247,18 +249,38 @@ export function runGate3(
           const src = readSourceFile(slicePath, projectRoot);
           if (!src) continue;
 
-          // Match entry pattern in domain-dispatchers slice:
-          //   "event.name": (payload, qc) => applyXxx(...)
-          // Use [\s\S]*? to cross newlines between the arrow and function call.
-          for (const m of allMatches(
-            src.content,
-            /"([a-z][a-z0-9._-]+)"\s*:\s*\([^)]*\)\s*=>\s*[\s\S]*?(apply[A-Z]\w+)\s*\(/g,
-          )) {
-            const eventStr = m[1];
-            const projFn = m[2];
-            if (!SOCKET_LIFECYCLE_EVENTS.has(eventStr)) {
-              dispatchedEvents.add(eventStr);
-              dispatcherCallsProjection.set(eventStr, projFn);
+          // gate3:delegate-dispatcher — file wraps apply* calls in named functions
+          // (e.g. for tracing/instrumentation). Trust all event entries as compliant;
+          // Gate 3 cannot verify the inline call path but the developer asserts it exists.
+          const isDelegated = src.content.includes(
+            "// gate3:delegate-dispatcher",
+          );
+
+          if (isDelegated) {
+            // Extract event names only; projection linkage is asserted by the annotation.
+            for (const m of allMatches(
+              src.content,
+              /"([a-z][a-z0-9._-]+)"\s*:/g,
+            )) {
+              const eventStr = m[1];
+              if (!SOCKET_LIFECYCLE_EVENTS.has(eventStr)) {
+                dispatchedEvents.add(eventStr);
+                dispatcherCallsProjection.set(eventStr, "<delegated>");
+              }
+            }
+          } else {
+            // Normal pattern: "event.name": (payload, qc) => applyXxx(...)
+            // Use [\s\S]*? to cross newlines between the arrow and function call.
+            for (const m of allMatches(
+              src.content,
+              /"([a-z][a-z0-9._-]+)"\s*:\s*\([^)]*\)\s*=>\s*[\s\S]*?(apply[A-Z]\w+)\s*\(/g,
+            )) {
+              const eventStr = m[1];
+              const projFn = m[2];
+              if (!SOCKET_LIFECYCLE_EVENTS.has(eventStr)) {
+                dispatchedEvents.add(eventStr);
+                dispatcherCallsProjection.set(eventStr, projFn);
+              }
             }
           }
         }

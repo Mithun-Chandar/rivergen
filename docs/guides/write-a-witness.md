@@ -191,6 +191,8 @@ import { applyTaskCreated } from "../lib/projections/task-projections";
 
 The witness stub includes this warning as a comment block at the top of the file.
 
+**Projection file purity.** `await import()` only solves the witness side. The projection file itself must also be free of browser-only imports. If your projection file (or anything it transitively imports) brings in React, browser globals, or UI components, Layer 3 will still fail because the subprocess has no browser environment. Generated projection files call only `applyEntityCreate/Update/Delete` from `entity-cache` — those are safe. Problems arise when a projection file is extended to import something UI-specific (e.g. a component, a browser storage utility, or a module that executes `window.*` at load time). Keep projection files as pure data-transform code.
+
 **The assertion pattern for lifecycle events:**
 
 ```typescript
@@ -340,6 +342,10 @@ The `lifecycle()` function returns an empty array. Fill it with at least one ass
 **`[Layer 3] import error: Cannot find module 'react'`**
 
 A projection file was imported at the top of the witness file (not inside `lifecycle()`). Move the import inside `lifecycle()` using `await import()`.
+
+**`[Layer 3] ReferenceError: window is not defined` (or similar browser global)**
+
+The projection file (or something it imports) references a browser-only API at load time. This happens when a projection file has been extended to import a UI utility or a module that touches `window`, `document`, or `localStorage`. Move that logic out of the projection file — projection files should only call `applyEntityCreate/Update/Delete` and pure data-transform code. The Layer 3 worker runs in a Node.js subprocess with no browser environment.
 
 **`task.created.title preserved: FAIL`**
 
