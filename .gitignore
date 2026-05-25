@@ -7,5 +7,8 @@ artifacts/
 *.tgz
 coverage/
 tests/
+docs/
+tsconfig.json
+vitest.config.ts
 CHANGELOG-session-*.md
 package-lock.json
