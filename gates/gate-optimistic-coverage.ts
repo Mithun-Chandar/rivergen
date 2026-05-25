@@ -4,7 +4,7 @@ import type { GateResult, GateViolation } from "./types.js";
 import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-optimistic-coverage";
-const GATE_NAME = "Gate: Optimistic UI Coverage (onMutate + onError)";
+const GATE_NAME = "Gate #10: Optimistic UI Coverage (onMutate + onError)";
 
 /**
  * Every useMutation block in hook files MUST have both:

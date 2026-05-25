@@ -10,7 +10,7 @@ import type { GateResult, GateViolation } from "./types.js";
 import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-schema-coverage";
-const GATE_NAME = "Gate: EventFactory Schema Coverage";
+const GATE_NAME = "Gate #6: EventFactory Schema Coverage";
 
 /**
  * Every event string emitted via socket.io in broadcast files MUST have a

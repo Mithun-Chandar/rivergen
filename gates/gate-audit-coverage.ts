@@ -7,7 +7,7 @@ import type { GateResult, GateViolation } from "./types.js";
 import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-audit-coverage";
-const GATE_NAME = "Gate: Event Audit Coverage";
+const GATE_NAME = "Gate #11: Event Audit Coverage";
 
 /**
  * Every event discovered by the generator must also be covered

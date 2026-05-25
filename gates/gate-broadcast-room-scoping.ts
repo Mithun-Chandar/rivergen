@@ -5,7 +5,7 @@ import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-broadcast-room";
 const GATE_NAME =
-  "Gate: Broadcast Room Scoping (PRIVATE entities → scoped rooms)";
+  "Gate #5: Broadcast Room Scoping (PRIVATE entities → scoped rooms)";
 
 /**
  * PRIVATE entity data MUST NOT be broadcast to workspace-wide rooms.

@@ -3,7 +3,7 @@ import type { GateResult, GateViolation } from "./types.js";
 import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-provider-isolation";
-const GATE_NAME = "Gate: WebSocketProvider Entity-Cache Isolation";
+const GATE_NAME = "Gate #8: WebSocketProvider Entity-Cache Isolation";
 
 /**
  * WebSocketProvider.tsx MUST NOT import from entity-cache.ts.

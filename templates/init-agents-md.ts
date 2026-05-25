@@ -161,14 +161,14 @@ queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) });
 | Gate #2 | Listener → broadcast → emit chain | Wiring is structurally incomplete |
 | Gate #3 | socket.on → dispatcher → projection chain | WS client side is incomplete |
 | Gate #4 | Projections use entity-cache helpers | Direct \`setQueryData\` calls found |
-| Schema coverage | All emitted events have schemas | You added an event without a schema |
-| Schema .strict() | All schemas use \`.strict()\` | Schema is too loose — fields leak silently |
-| Room scoping | Private entities are scoped to rooms | Private data leaking to public room |
-| Provider isolation | WebSocketProvider doesn't touch entity-cache | Convergence path is split |
-| No onSuccess writes | No cache writes in \`onSuccess\` | Second convergence path added |
-| Optimistic coverage | All mutations have \`onMutate\` + \`onError\` | Missing rollback handler |
-| Event Audit Coverage | Every event appears in payload continuity audit | Only runs when audit artifacts are present |
-| Gate #12 (Witness) | Witness file is complete for every broadcast event | Field contract not locked |
+| Gate #5 | Private entities are scoped to rooms | Private data leaking to public room |
+| Gate #6 | All emitted events have schemas | You added an event without a schema |
+| Gate #7 | All schemas use \`.strict()\` | Schema is too loose — fields leak silently |
+| Gate #8 | WebSocketProvider doesn't touch entity-cache | Convergence path is split |
+| Gate #9 | No cache writes in \`onSuccess\` | Second convergence path added |
+| Gate #10 | All mutations have \`onMutate\` + \`onError\` | Missing rollback handler |
+| Gate #11 | Every event appears in payload continuity audit | Only runs when audit artifacts are present |
+| Gate #12 | Witness file is complete for every broadcast event | Field contract not locked |
 
 All gates pass immediately after \`rivergen gen\` — the generated code is structurally complete.
 

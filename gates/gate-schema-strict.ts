@@ -4,7 +4,7 @@ import type { GateResult, GateViolation } from "./types.js";
 import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-schema-strict";
-const GATE_NAME = "Gate: Schema .strict() Enforcement";
+const GATE_NAME = "Gate #7: Schema .strict() Enforcement";
 
 /**
  * Every Zod schema entry in schemas/<domain>.ts MUST use `.strict()`.

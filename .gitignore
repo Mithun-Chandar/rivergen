@@ -7,7 +7,7 @@ artifacts/
 *.tgz
 coverage/
 tests/
-docs/
+.maintainer/
 tsconfig.json
 vitest.config.ts
 CHANGELOG-session-*.md

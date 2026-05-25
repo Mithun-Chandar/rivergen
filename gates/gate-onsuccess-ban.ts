@@ -4,7 +4,7 @@ import type { GateResult, GateViolation } from "./types.js";
 import type { GeneratorConfig } from "../config.js";
 
 const GATE_ID = "gate-onsuccess-ban";
-const GATE_NAME = "Gate: No Cache Writes in onSuccess";
+const GATE_NAME = "Gate #9: No Cache Writes in onSuccess";
 
 /**
  * useMutation onSuccess MUST NOT mutate the React Query cache.

@@ -24,16 +24,16 @@ import { loadConfig } from "../config.js";
  *
  * Gate inventory:
  *   Gate #1  — Mutation → EventFactory.publish (no socket.emit / eventBus bypass)
- *   Gate #2  — Event → Listener → WebSocket emit
- *   Gate #3  — WebSocket event → Dispatcher → Projection
+ *   Gate #2  — Event → Listener → Broadcaster → socket.emit
+ *   Gate #3  — WS socket.on → Dispatcher → Projection call
  *   Gate #4  — Projection → entity-cache helpers
- *   Gate     — Broadcast room scoping (PRIVATE → scoped rooms)
- *   Gate     — EventFactory schema coverage (every emitted event has a schema)
- *   Gate     — Schema .strict() enforcement (every z.object() uses .strict())
- *   Gate     — Provider isolation (no entity-cache in WebSocketProvider)
- *   Gate     — No cache writes in onSuccess (WS projection owns convergence)
- *   Gate     — Optimistic coverage (every useMutation has onMutate + onError)
- *   Gate     — Audit coverage (every event in Phase 4/5/6)
+ *   Gate #5  — Broadcast room scoping (PRIVATE → scoped rooms)
+ *   Gate #6  — EventFactory schema coverage (every emitted event has a schema)
+ *   Gate #7  — Schema .strict() enforcement (every z.object() uses .strict())
+ *   Gate #8  — Provider isolation (no entity-cache in WebSocketProvider)
+ *   Gate #9  — No cache writes in onSuccess (WS projection owns convergence)
+ *   Gate #10 — Optimistic coverage (every useMutation has onMutate + onError)
+ *   Gate #11 — Audit coverage (every event in Phase 4/5/6)
  *   Gate #12 — Witness coverage (every broadcast event has a witness file entry)
  */
 export async function runAllGates(projectRoot: string): Promise<RunnerReport> {
