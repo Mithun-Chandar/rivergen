@@ -117,7 +117,7 @@ See [docs/guides/first-domain.md](https://github.com/Mithun-Chandar/rivergen/blo
 
 **[Live demo →](https://rivergen-phi.vercel.app/)** — 3 domains, 12/12 gates passing, live One River pipeline visualization.
 
-[![RiverGen demo](https://raw.githubusercontent.com/Mithun-Chandar/rivergen/main/.github/demo.png)](https://rivergen-phi.vercel.app/)
+[![RiverGen](https://raw.githubusercontent.com/Mithun-Chandar/rivergen/main/.github/screenshot.png)](https://rivergen-phi.vercel.app/)
 
 **[Demo source →](https://github.com/Mithun-Chandar/rivergen-demo-1)** — clone and run locally:
 
