@@ -34,6 +34,12 @@ An open-source scaffold and enforcement framework for realtime architectures tha
 
 You keep your own backend. Your own database. Your own transport. RiverGen enforces the architecture around them.
 
+**Three layers:**
+
+- **Scaffold** — one spec generates 12 files: router, mutations, broadcast, listener, hooks, projections, schema slice, dispatcher slice, ws-bindings slice, entity-projection slice, query-keys slice, and a witness stub. The architecture exists before you write a line of business logic.
+- **Gate** — 12 structural checks run on `rivergen verify`. Drift from the One River path becomes a build error, not a production incident.
+- **Witness** — field-level continuity proof. Every field tracked from the event payload through the broadcast, the projection, and into the TanStack Query cache. Structural correctness is necessary — Witness proves the data survived the pipeline.
+
 ---
 
 ## One River
@@ -49,6 +55,19 @@ mutation
           → dispatcher
             → projection
               → TanStack Query cache ✓
+```
+
+```mermaid
+graph LR
+    UI[User Action] -->|onMutate| OG[Optimistic Ghost]
+    UI -->|mutationFn| API[API Mutation]
+    API -->|eventFactory.publish| EF[EventFactory]
+    EF -->|EventBus| EB[event bus]
+    EB -->|subscribe| EL[EventBus Listener]
+    EL -->|broadcastXEvent| BC[broadcast.ts]
+    BC -->|socket.io emit| WS[WebSocket]
+    WS -->|projection| TQ[TanStack Query Cache]
+    TQ -->|replaces ghost| UI
 ```
 
 When there is one path, accountability is possible. When there are two — an `onSuccess` write here, a `setQueryData` patch there — accountability disappears.
@@ -229,6 +248,25 @@ rivergen verify
 ## What gets generated
 
 `rivergen gen specs/task.json` writes 12 files from a single spec:
+
+```mermaid
+graph LR
+    S[JSON Spec] -->|rivergen gen| G[RiverGen]
+    G --> R[router.ts]
+    G --> M[mutations.ts]
+    G --> B[broadcast.ts]
+    G --> L[listener.ts]
+    G --> H[use-domain.ts]
+    G --> P[projections.ts]
+    G --> SC[schema slice]
+    G --> DC[dispatcher slice]
+    G --> WB[ws-bindings slice]
+    G --> EP[entity-projection slice]
+    G --> QK[query-keys slice]
+    G --> W[witness.ts]
+    G -->|rivergen verify| V{12 Gates}
+    V -->|all green| SHIP[Ship It]
+```
 
 | #   | File                                                    | What it is                                     |
 | --- | ------------------------------------------------------- | ---------------------------------------------- |
