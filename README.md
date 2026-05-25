@@ -78,7 +78,36 @@ rivergen gen specs/task.json    # write 12 domain files + regenerate barrels
 rivergen verify                 # run all 12 gates
 ```
 
+One spec. One command. Twelve files, all wired:
+
+```
+spec.json
+    └── rivergen gen
+            ├── apps/api/src/<domain>/
+            │       ├── <domain>.router.ts
+            │       ├── <domain>.mutations.ts
+            │       └── <domain>.broadcast.ts
+            ├── apps/api/src/lib/
+            │       ├── event-bus-listeners/<domain>.listener.ts
+            │       └── event-factory/schemas/<domain>.ts
+            ├── apps/web/src/
+            │       ├── hooks/use-<domain>.ts
+            │       ├── lib/projections/<domain>-projections.ts
+            │       ├── lib/cache/domain-dispatchers/<domain>.ts
+            │       ├── providers/ws-bindings/<domain>.ts
+            │       └── witness/<domain>.witness.ts
+            └── packages/shared/src/
+                    ├── entity-projections/<domain>.ts
+                    └── (query-keys/<domain>.ts regenerated)
+```
+
 See [docs/guides/first-domain.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/guides/first-domain.md) for a complete step-by-step walkthrough.
+
+---
+
+## Try it
+
+> **Demo app coming soon.** Clone-and-run example with ghost reconciliation, room-scoped updates, and a complete passing `rivergen verify` transcript.
 
 ---
 
@@ -101,7 +130,7 @@ See [docs/guides/first-domain.md](https://github.com/Mithun-Chandar/rivergen/blo
 | **#11** Event audit coverage      | Every event is covered in payload continuity audit artifacts (skipped if none present) |
 | **#12** Witness coverage          | Every broadcast event has a complete witness entry                                     |
 
-See [docs/reference/gates.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/reference/gates.md) for the full gate reference including failure examples.
+See [docs/reference/gates.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/reference/gates.md) for the full gate reference. See [docs/examples/failure-lab.md](https://github.com/Mithun-Chandar/rivergen/blob/main/docs/examples/failure-lab.md) for real `rivergen verify` output for each violation — broken code, exact error, and fix.
 
 ---
 
